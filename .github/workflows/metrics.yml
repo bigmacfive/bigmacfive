@@ -16,7 +16,7 @@ jobs:
     steps:
 
       - name: Stats overview
-        uses: lowlighter/metrics@v3
+        uses: lowlighter/metrics@v3.34
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           user: bigmacfive
@@ -25,7 +25,7 @@ jobs:
           config_timezone: Asia/Seoul
 
       - name: Most used languages
-        uses: lowlighter/metrics@v3
+        uses: lowlighter/metrics@v3.34
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           user: bigmacfive
@@ -37,7 +37,7 @@ jobs:
           config_timezone: Asia/Seoul
 
       - name: Contribution calendar
-        uses: lowlighter/metrics@v3
+        uses: lowlighter/metrics@v3.34
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           user: bigmacfive

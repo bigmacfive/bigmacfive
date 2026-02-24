@@ -1,0 +1,48 @@
+name: Metrics
+
+on:
+  schedule:
+    - cron: "0 0 * * *"
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+
+permissions:
+  contents: write
+
+jobs:
+  github-metrics:
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Stats overview
+        uses: lowlighter/metrics@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          user: bigmacfive
+          filename: metrics.stats.svg
+          base: header, activity, community, repositories
+          config_timezone: Asia/Seoul
+
+      - name: Most used languages
+        uses: lowlighter/metrics@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          user: bigmacfive
+          filename: metrics.languages.svg
+          base: ""
+          plugin_languages: yes
+          plugin_languages_limit: 8
+          plugin_languages_analysis_timeout: 15
+          config_timezone: Asia/Seoul
+
+      - name: Contribution calendar
+        uses: lowlighter/metrics@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          user: bigmacfive
+          filename: metrics.calendar.svg
+          base: ""
+          plugin_isocalendar: yes
+          plugin_isocalendar_duration: full-year
+          config_timezone: Asia/Seoul

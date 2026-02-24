@@ -4,12 +4,8 @@
 
 <br/>
 
-<table>
-  <tr>
-    <td><img src="metrics.stats.svg" /></td>
-    <td><img src="metrics.languages.svg" /></td>
-  </tr>
-</table>
+<img height="200em" src="metrics.stats.svg" />
+<img height="200em" src="metrics.languages.svg" />
 
 <br/>
 

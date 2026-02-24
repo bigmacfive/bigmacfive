@@ -18,28 +18,32 @@ jobs:
       - name: Stats overview
         uses: lowlighter/metrics@v3.34
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.METRICS_TOKEN }}
           user: bigmacfive
           filename: metrics.stats.svg
           base: header, activity, community, repositories
           config_timezone: Asia/Seoul
+          config_display: large
 
       - name: Most used languages
         uses: lowlighter/metrics@v3.34
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.METRICS_TOKEN }}
           user: bigmacfive
           filename: metrics.languages.svg
           base: ""
           plugin_languages: yes
           plugin_languages_limit: 8
-          plugin_languages_analysis_timeout: 15
+          plugin_languages_analysis_timeout: 60
+          plugin_languages_indepth: yes
+          plugin_languages_sections: most-used
           config_timezone: Asia/Seoul
+          config_display: large
 
       - name: Contribution calendar
         uses: lowlighter/metrics@v3.34
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.METRICS_TOKEN }}
           user: bigmacfive
           filename: metrics.calendar.svg
           base: ""

@@ -1,4 +1,4 @@
-name: Metrics
+name: Profile
 
 on:
   schedule:
@@ -11,42 +11,27 @@ permissions:
   contents: write
 
 jobs:
-  github-metrics:
+  generate-profile:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
 
-      - name: Stats overview
-        uses: lowlighter/metrics@v3.34
+      - uses: actions/setup-python@v5
         with:
-          token: ${{ secrets.METRICS_TOKEN }}
-          user: bigmacfive
-          filename: metrics.stats.svg
-          base: header, activity, community, repositories
-          config_timezone: Asia/Seoul
-          config_display: large
+          python-version: "3.11"
 
-      - name: Most used languages
-        uses: lowlighter/metrics@v3.34
-        with:
-          token: ${{ secrets.METRICS_TOKEN }}
-          user: bigmacfive
-          filename: metrics.languages.svg
-          base: ""
-          plugin_languages: yes
-          plugin_languages_limit: 8
-          plugin_languages_analysis_timeout: 60
-          plugin_languages_indepth: yes
-          plugin_languages_sections: most-used
-          config_timezone: Asia/Seoul
-          config_display: large
+      - name: Install dependencies
+        run: pip install requests
 
-      - name: Contribution calendar
-        uses: lowlighter/metrics@v3.34
-        with:
-          token: ${{ secrets.METRICS_TOKEN }}
-          user: bigmacfive
-          filename: metrics.calendar.svg
-          base: ""
-          plugin_isocalendar: yes
-          plugin_isocalendar_duration: full-year
-          config_timezone: Asia/Seoul
+      - name: Generate profile card
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python generate_profile.py
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add profile.svg
+          git diff --staged --quiet || git commit -m "Update profile card [skip ci]"
+          git push

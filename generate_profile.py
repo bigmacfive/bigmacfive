@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
-"""GitHub Profile Dashboard v5.1 — Claude Theme (Readability)
+"""GitHub Profile Dashboard v6 — macOS Native
 
-- Card 850×620: generous vertical spacing
-- Bigger fonts, taller rows, wider padding between sections
-- Claude brand palette: warm coral, peach, cream on dark
+- macOS dark-mode window chrome with traffic lights
+- Panel-based layout with rounded corners and subtle borders
+- Claude brand colors as accent on native macOS dark palette
+- System font stack + monospace for code only
+- Clean metric cards, no retro terminal elements
 """
 
 import os, re, requests, random
@@ -13,10 +15,10 @@ from math import pi
 
 USERNAME = "bigmacfive"
 TOKEN = os.environ.get("GITHUB_TOKEN", "")
-W, H = 850, 620
-F = "'Courier New', monospace"
+W, H = 850, 680
+F = "-apple-system, 'SF Pro Display', 'Helvetica Neue', sans-serif"
+FM = "'SF Mono', 'Menlo', 'Courier New', monospace"
 
-# ── Pixel Pet: 16×13  0=clear 1=body 2=eye 3=highlight 4=blush ──
 PET = [
     [0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0],
     [0,0,0,1,1,1,1,1,1,1,1,1,1,0,0,0],
@@ -33,22 +35,15 @@ PET = [
     [0,0,0,1,1,0,0,0,0,0,0,1,1,0,0,0],
 ]
 
-# ── Claude Brand Palette ──
 C = {
-    "body": "#D97757",   # Claude coral — pet body
-    "hi": "#E8A87C",     # Peach — highlights
-    "dark": "#1A1410",   # Warm black — dark elements
-    "blush": "#F0A88C",  # Soft blush
-    "bg": "#1A1410",     # Warm dark background
-    "srf": "#100D09",    # Warm surface
-    "bdr": "#3D3028",    # Warm border
-    "accent": "#E8A87C", # Peach accent
-    "green": "#D97757",  # Claude coral (primary)
-    "orange": "#C4703E", # Deep terracotta
-    "purple": "#F5E6D3", # Cream
-    "txt": "#F5E6D3",    # Cream text
-    "dim": "#9B8672",    # Warm muted
-    "tbar": "#211A14",   # Warm title bar
+    "win_bg":  "#1a1512",  "titlebar": "#2a2219",
+    "panel":   "#221c17",  "panel_bdr": "#3d3028",  "hover": "#2d2520",
+    "txt":     "#F5E6D3",  "txt2":     "#9B8672",   "txt3": "#6b5c4d",
+    "accent":  "#D97757",  "peach":    "#E8A87C",   "cream": "#F5E6D3",
+    "terra":   "#C4703E",
+    "body":    "#D97757",  "hi":       "#E8A87C",   "dark": "#1A1410",
+    "blush":   "#F0A88C",
+    "tl_r":    "#ff5f57",  "tl_y":     "#febc2e",   "tl_g": "#28c840",
 }
 
 AI_PATTERNS = {
@@ -96,7 +91,6 @@ def fetch_stats():
     u = data["user"]
     cc = u["contributionsCollection"]
     cal = cc["contributionCalendar"]
-
     days = sorted([d for w in cal["weeks"] for d in w["contributionDays"]],
                   key=lambda d: d["date"], reverse=True)
     streak, today = 0, datetime.now(timezone.utc).date()
@@ -106,7 +100,6 @@ def fetch_stats():
             streak += 1
         elif datetime.fromisoformat(day["date"]).date() < exp:
             break
-
     ld, stars = {}, 0
     for repo in u["repositories"]["nodes"]:
         stars += repo.get("stargazerCount", 0)
@@ -116,7 +109,6 @@ def fetch_stats():
     ts = sum(v["s"] for v in ld.values())
     langs = [(n, i["c"], i["s"]/ts*100) for n, i in
              sorted(ld.items(), key=lambda x: x[1]["s"], reverse=True)[:6]] if ts else []
-
     created = datetime.fromisoformat(u["createdAt"].replace("Z", "+00:00"))
     years = (datetime.now(timezone.utc) - created).days // 365
     return {"commits": cc["totalCommitContributions"], "streak": streak,
@@ -131,7 +123,6 @@ def _empty():
 
 
 def fetch_ai_ratio():
-    """Scan commits across repos for AI co-author signatures."""
     data = gql("""
     query($login: String!) {
       user(login: $login) {
@@ -151,7 +142,6 @@ def fetch_ai_ratio():
     }""", {"login": USERNAME})
     if not data or not data.get("user"):
         return {"total": 0, "ai": 0, "human": 0, "tools": {}}
-
     total, ai_total, tools = 0, 0, {}
     for repo in data["user"]["repositories"]["nodes"]:
         ref = repo.get("defaultBranchRef")
@@ -204,27 +194,54 @@ def svg_defs():
     <style>
       .eye {{ animation: blink 4s step-end infinite; }}
       .pet {{ animation: float 3s ease-in-out infinite; }}
-      @keyframes blink {{ 0%,92% {{ opacity:1 }} 93%,97% {{ opacity:0 }} 98% {{ opacity:1 }} }}
-      @keyframes float {{ 0%,100% {{ transform:translateY(0) }} 50% {{ transform:translateY(-6px) }} }}
+      @keyframes blink {{ 0%,92%{{opacity:1}} 93%,97%{{opacity:0}} 98%{{opacity:1}} }}
+      @keyframes float {{ 0%,100%{{transform:translateY(0)}} 50%{{transform:translateY(-5px)}} }}
     </style>
     <linearGradient id="grd" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%"><animate attributeName="stop-color" values="#D97757;#E8A87C;#F5E6D3;#C4703E;#D97757" dur="10s" repeatCount="indefinite"/></stop>
       <stop offset="50%"><animate attributeName="stop-color" values="#E8A87C;#F5E6D3;#C4703E;#D97757;#E8A87C" dur="10s" repeatCount="indefinite"/></stop>
       <stop offset="100%"><animate attributeName="stop-color" values="#F5E6D3;#C4703E;#D97757;#E8A87C;#F5E6D3" dur="10s" repeatCount="indefinite"/></stop>
     </linearGradient>
-    <filter id="glow"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-    <filter id="glow2"><feGaussianBlur stdDeviation="1.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
     <linearGradient id="hpg"><stop offset="0%" stop-color="#D97757"/><stop offset="100%" stop-color="#E8A87C"/></linearGradient>
     <linearGradient id="xpg"><stop offset="0%" stop-color="#C4703E"/><stop offset="100%" stop-color="#D97757"/></linearGradient>
+    <clipPath id="win"><rect width="{W}" height="{H}" rx="12"/></clipPath>
   </defs>'''
 
 
-def svg_pet(bx, by, ps=9):
+def svg_panel(x, y, w, h):
+    return (f'<rect x="{x}" y="{y}" width="{w}" height="{h}" '
+            f'fill="{C["panel"]}" rx="10" stroke="{C["panel_bdr"]}" stroke-width="0.5"/>')
+
+
+def svg_panel_header(x, y, title):
+    return (f'<text x="{x}" y="{y}" font-family="{F}" font-size="11" '
+            f'fill="{C["txt2"]}" font-weight="600" letter-spacing="0.5">{title}</text>')
+
+
+def svg_titlebar():
+    return (
+        # Title bar background
+        f'<rect x="0" y="0" width="{W}" height="38" fill="{C["titlebar"]}" clip-path="url(#win)"/>'
+        # Bottom edge
+        f'<line x1="0" y1="38" x2="{W}" y2="38" stroke="{C["panel_bdr"]}" stroke-width="0.5"/>'
+        # Traffic lights
+        f'<circle cx="32" cy="19" r="6" fill="{C["tl_r"]}"/>'
+        f'<circle cx="52" cy="19" r="6" fill="{C["tl_y"]}"/>'
+        f'<circle cx="72" cy="19" r="6" fill="{C["tl_g"]}"/>'
+        # Window title
+        f'<text x="{W//2}" y="23" font-family="{F}" font-size="13" '
+        f'fill="{C["txt2"]}" text-anchor="middle" font-weight="500">'
+        f'bigmacfive — GitHub Dashboard</text>'
+    )
+
+
+def svg_pet(bx, by, ps=8):
     color_map = {1: C["body"], 2: C["dark"], 3: C["hi"], 4: C["blush"]}
     px = []
     for ry, row in enumerate(PET):
         for cx, cell in enumerate(row):
-            if cell == 0: continue
+            if cell == 0:
+                continue
             x, y = bx + cx * ps, by + ry * ps
             col = color_map[cell]
             cls = ' class="eye"' if cell in (2, 3) and 3 <= ry <= 4 else ""
@@ -235,109 +252,88 @@ def svg_pet(bx, by, ps=9):
 def svg_sparkles(bx, by, w, h):
     random.seed(42)
     parts = []
-    for _ in range(12):
-        x, y = bx + random.randint(-12, w+12), by + random.randint(-12, h+12)
-        r = round(random.uniform(1, 2.5), 1)
+    for _ in range(10):
+        x, y = bx + random.randint(-8, w + 8), by + random.randint(-8, h + 8)
+        r = round(random.uniform(0.8, 2.0), 1)
         dur = round(random.uniform(2, 4), 1)
         begin = round(random.uniform(0, 5), 1)
         col = random.choice(["#D97757", "#E8A87C", "#F5E6D3", "#C4703E"])
         parts.append(
             f'<circle cx="{x}" cy="{y}" r="{r}" fill="{col}" opacity="0">'
-            f'<animate attributeName="opacity" values="0;0.9;0" dur="{dur}s" begin="{begin}s" repeatCount="indefinite"/>'
+            f'<animate attributeName="opacity" values="0;0.7;0" dur="{dur}s" begin="{begin}s" repeatCount="indefinite"/>'
             f'</circle>')
     return "\n    ".join(parts)
 
 
-def svg_ring(cx, cy, r, pct, color, value, label, delay=0):
-    circ = 2 * pi * r
-    off = circ * (1 - min(pct, 1.0))
+def svg_pet_panel(stats):
+    """Pet panel: pixel art + level + HP/XP bars."""
+    px, py, pw, ph = 16, 50, 180, 170
+    pet_x = px + (pw - 16 * 8) // 2  # center 128px pet in 180px panel
+    pet_y = py + 14
+    pet = svg_pet(pet_x, pet_y, ps=8)
+    sparkles = svg_sparkles(pet_x - 4, pet_y - 4, 128, 104)
+    pet_bot = pet_y + 13 * 8  # 104px tall
+
+    commits = stats["commits"]
+    hp_w = int(min(commits / max(commits, 1000), 1.0) * 100)
+    xp_w = int(min(stats["streak"] / 30, 1.0) * 100)
+
     return (
-        f'<circle cx="{cx}" cy="{cy}" r="{r}" stroke="{C["bdr"]}" stroke-width="5" fill="none"/>'
-        f'<circle cx="{cx}" cy="{cy}" r="{r}" stroke="{color}" stroke-width="5" fill="none" '
-        f'stroke-dasharray="{circ:.1f}" stroke-dashoffset="{circ:.1f}" '
-        f'stroke-linecap="round" transform="rotate(-90 {cx} {cy})" filter="url(#glow2)">'
-        f'<animate attributeName="stroke-dashoffset" from="{circ:.1f}" to="{off:.1f}" '
-        f'dur="1.5s" begin="{delay}s" fill="freeze" calcMode="spline" keySplines="0.4 0 0.2 1"/>'
-        f'</circle>'
-        f'<text x="{cx}" y="{cy+6}" text-anchor="middle" font-family="{F}" '
-        f'font-size="16" fill="{C["txt"]}" font-weight="bold" opacity="0">'
-        f'<animate attributeName="opacity" from="0" to="1" dur="0.4s" begin="{delay+0.8}s" fill="freeze"/>'
+        svg_panel(px, py, pw, ph)
+        + f'<g class="pet">{pet}</g>'
+        + sparkles
+        # Level badge
+        + f'<text x="{px + pw//2}" y="{pet_bot + 16}" font-family="{F}" font-size="10" '
+          f'fill="{C["accent"]}" text-anchor="middle" font-weight="600">LV.{stats["years"]}</text>'
+        # HP bar
+        + f'<text x="{px + 14}" y="{pet_bot + 34}" font-family="{F}" font-size="8" fill="{C["accent"]}">HP</text>'
+        + f'<rect x="{px + 34}" y="{pet_bot + 26}" width="100" height="8" fill="{C["panel_bdr"]}" rx="4"/>'
+        + f'<rect x="{px + 34}" y="{pet_bot + 26}" width="{hp_w}" height="8" fill="url(#hpg)" rx="4">'
+          f'<animate attributeName="opacity" values="0.85;1;0.85" dur="3s" repeatCount="indefinite"/></rect>'
+        # XP bar
+        + f'<text x="{px + 14}" y="{pet_bot + 48}" font-family="{F}" font-size="8" fill="{C["peach"]}">XP</text>'
+        + f'<rect x="{px + 34}" y="{pet_bot + 40}" width="100" height="8" fill="{C["panel_bdr"]}" rx="4"/>'
+        + f'<rect x="{px + 34}" y="{pet_bot + 40}" width="{xp_w}" height="8" fill="url(#xpg)" rx="4"/>'
+    )
+
+
+def svg_stat_card(x, y, value, label, color, sub_label, pct, delay):
+    """Single macOS-style metric card."""
+    bar_w = int(min(pct, 1.0) * 220)
+    return (
+        # Large value
+        f'<text x="{x}" y="{y + 20}" font-family="{F}" font-size="20" '
+        f'fill="{C["txt"]}" font-weight="700" opacity="0">'
+        f'<animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="{delay}s" fill="freeze"/>'
         f'{value}</text>'
-        f'<text x="{cx}" y="{cy+r+18}" text-anchor="middle" font-family="{F}" '
-        f'font-size="10" fill="{C["dim"]}">{label}</text>')
+        # Label
+        + f'<text x="{x + 230}" y="{y + 20}" font-family="{F}" font-size="11" '
+          f'fill="{C["txt2"]}" text-anchor="end">{label}</text>'
+        # Progress bar
+        + f'<rect x="{x}" y="{y + 28}" width="230" height="3" fill="{C["panel_bdr"]}" rx="1.5"/>'
+        + f'<rect x="{x}" y="{y + 28}" width="{bar_w}" height="3" fill="{color}" rx="1.5" opacity="0">'
+          f'<animate attributeName="opacity" from="0" to="0.8" dur="0.8s" begin="{delay + 0.2}s" fill="freeze"/>'
+          f'</rect>'
+        # Sub-label
+        + f'<text x="{x}" y="{y + 44}" font-family="{F}" font-size="9" fill="{C["txt3"]}">{sub_label}</text>'
+    )
 
 
-def svg_collab(ratio, x, y, width):
-    """AI collaboration ratio segmented bar."""
-    total = ratio["total"]
-    if total == 0:
-        return (f'<text x="{x}" y="{y}" font-family="{F}" font-size="12" fill="{C["green"]}" '
-                f'filter="url(#glow2)">$ collab --ratio</text>'
-                f'<text x="{x}" y="{y+26}" font-family="{F}" font-size="10" fill="{C["dim"]}" '
-                f'opacity="0.4">[ scanning commits... ]</text>')
+def svg_stats_panel(stats):
+    """Overview panel with 3 metric cards."""
+    px, py, pw, ph = 206, 50, 280, 170
+    ix, iy = px + 14, py + 14  # inner origin
 
-    human_pct = ratio["human"] / total * 100
-    ai_pct = ratio["ai"] / total * 100
+    header = svg_panel_header(ix, iy + 10, "Overview")
 
-    # build segments: human first, then each tool
-    segments = [("Human", "#E8A87C", ratio["human"])]
-    for tool, count in sorted(ratio["tools"].items(), key=lambda x: x[1], reverse=True):
-        segments.append((tool, AI_COLORS.get(tool, C["dim"]), count))
+    card1 = svg_stat_card(ix, iy + 20, f'{stats["commits"]:,}', "commits",
+                          C["accent"], f'★ {stats["stars"]}  stars', min(stats["commits"] / 2000, 1.0), 0.2)
+    card2 = svg_stat_card(ix, iy + 70, f'{stats["streak"]}d', "streak",
+                          C["peach"], f'{stats["repos"]} repos', min(stats["streak"] / 30, 1.0), 0.5)
+    card3 = svg_stat_card(ix, iy + 120, str(stats["followers"]), "followers",
+                          C["cream"], f'joined {stats["years"]}y ago', min(stats["followers"] / 100, 1.0), 0.8)
 
-    bar_y = y + 18
-    bar_h = 18
-    parts = [
-        f'<text x="{x}" y="{y}" font-family="{F}" font-size="12" fill="{C["green"]}" '
-        f'filter="url(#glow2)">$ collab --ratio</text>',
-        f'<rect x="{x}" y="{bar_y}" width="{width}" height="{bar_h}" fill="{C["bdr"]}" rx="8"/>',
-    ]
-
-    # draw segments
-    cx = x
-    for i, (name, color, count) in enumerate(segments):
-        seg_w = int(count / total * width)
-        if i == len(segments) - 1:
-            seg_w = width - (cx - x)
-        if seg_w < 1:
-            continue
-        parts.append(
-            f'<rect x="{cx}" y="{bar_y}" width="{seg_w}" height="{bar_h}" fill="{color}" '
-            f'opacity="0.85" rx="0">'
-            f'<animate attributeName="width" from="0" to="{seg_w}" dur="1s" '
-            f'begin="0.3s" fill="freeze" calcMode="spline" keySplines="0.4 0 0.2 1"/>'
-            f'</rect>')
-        cx += seg_w
-
-    # rounded corners overlay
-    parts.append(
-        f'<rect x="{x}" y="{bar_y}" width="{width}" height="{bar_h}" fill="none" '
-        f'stroke="{C["bdr"]}" stroke-width="1" rx="8"/>')
-
-    # percentage labels on bar
-    if human_pct > 15:
-        parts.append(
-            f'<text x="{x + int(ratio["human"]/total*width/2)}" y="{bar_y + 13}" '
-            f'text-anchor="middle" font-family="{F}" font-size="10" fill="{C["dark"]}" '
-            f'font-weight="bold">{human_pct:.0f}%</text>')
-    if ai_pct > 10:
-        ai_center = x + int(ratio["human"]/total*width) + int(ratio["ai"]/total*width/2)
-        parts.append(
-            f'<text x="{ai_center}" y="{bar_y + 13}" text-anchor="middle" '
-            f'font-family="{F}" font-size="10" fill="{C["dark"]}" font-weight="bold">'
-            f'{ai_pct:.0f}%</text>')
-
-    # legend dots below bar
-    lx = x
-    legend_y = bar_y + bar_h + 18
-    for name, color, count in segments:
-        pct = count / total * 100
-        parts.append(
-            f'<circle cx="{lx + 5}" cy="{legend_y - 3}" r="4.5" fill="{color}"/>'
-            f'<text x="{lx + 15}" y="{legend_y + 1}" font-family="{F}" font-size="10" '
-            f'fill="{C["txt"]}">{name} <tspan fill="{C["dim"]}">{pct:.0f}%</tspan></text>')
-        lx += max(len(name) * 8 + 70, 130)
-
-    return "\n    ".join(parts)
+    return svg_panel(px, py, pw, ph) + header + card1 + card2 + card3
 
 
 def heatmap_color(n):
@@ -348,208 +344,218 @@ def heatmap_color(n):
     return "#D97757"
 
 
-def svg_heatmap(weeks, bx, by, cs=8, gap=2):
+def svg_heatmap_panel(weeks):
+    """Contribution heatmap panel."""
+    px, py, pw, ph = 496, 50, 338, 170
+    ix, iy = px + 14, py + 14
+
+    header = svg_panel_header(ix, iy + 10, "Contributions")
+
     recent = weeks[-18:] if weeks else []
+    cs, gap = 8, 2
+    grid_x = ix + 4
+    grid_y = iy + 22
     rects = []
     for wi, wk in enumerate(recent):
         for di, day in enumerate(wk["contributionDays"]):
-            x, y = bx + wi * (cs + gap), by + di * (cs + gap)
+            x = grid_x + wi * (cs + gap)
+            y = grid_y + di * (cs + gap)
             rects.append(f'<rect x="{x}" y="{y}" width="{cs}" height="{cs}" '
                          f'fill="{heatmap_color(day["contributionCount"])}" rx="2"/>')
-    return "\n      ".join(rects)
+
+    # Legend
+    leg_y = grid_y + 7 * (cs + gap) + 6
+    legend = (
+        f'<text x="{grid_x}" y="{leg_y + 8}" font-family="{F}" font-size="8" fill="{C["txt3"]}">less</text>'
+        f'<rect x="{grid_x + 26}" y="{leg_y}" width="8" height="8" fill="#211A14" rx="1.5"/>'
+        f'<rect x="{grid_x + 36}" y="{leg_y}" width="8" height="8" fill="#4A2C1A" rx="1.5"/>'
+        f'<rect x="{grid_x + 46}" y="{leg_y}" width="8" height="8" fill="#7A4528" rx="1.5"/>'
+        f'<rect x="{grid_x + 56}" y="{leg_y}" width="8" height="8" fill="#B85F35" rx="1.5"/>'
+        f'<rect x="{grid_x + 66}" y="{leg_y}" width="8" height="8" fill="#D97757" rx="1.5"/>'
+        f'<text x="{grid_x + 78}" y="{leg_y + 8}" font-family="{F}" font-size="8" fill="{C["txt3"]}">more</text>'
+    )
+
+    return svg_panel(px, py, pw, ph) + header + "\n      ".join(rects) + legend
 
 
-def svg_commits(events, x, y):
+def svg_collab_panel(ratio):
+    """AI Collaboration panel."""
+    px, py, pw, ph = 16, 230, 818, 76
+    ix, iy = px + 14, py + 14
+
+    header = svg_panel_header(ix, iy + 10, "AI Collaboration")
+
+    total = ratio["total"]
+    if total == 0:
+        empty = (f'<text x="{ix}" y="{iy + 36}" font-family="{F}" font-size="10" '
+                 f'fill="{C["txt3"]}">No commit data available</text>')
+        return svg_panel(px, py, pw, ph) + header + empty
+
+    human_pct = ratio["human"] / total * 100
+    ai_pct = ratio["ai"] / total * 100
+    bar_w = pw - 28
+    bar_x = ix
+    bar_y = iy + 20
+    bar_h = 14
+
+    segments = [("Human", C["peach"], ratio["human"])]
+    for tool, count in sorted(ratio["tools"].items(), key=lambda x: x[1], reverse=True):
+        segments.append((tool, AI_COLORS.get(tool, C["txt3"]), count))
+
+    parts = [
+        svg_panel(px, py, pw, ph),
+        header,
+        f'<rect x="{bar_x}" y="{bar_y}" width="{bar_w}" height="{bar_h}" fill="{C["panel_bdr"]}" rx="7"/>',
+    ]
+
+    # Segments
+    cx = bar_x
+    for i, (name, color, count) in enumerate(segments):
+        seg_w = int(count / total * bar_w)
+        if i == len(segments) - 1:
+            seg_w = bar_w - (cx - bar_x)
+        if seg_w < 1:
+            continue
+        parts.append(
+            f'<rect x="{cx}" y="{bar_y}" width="{seg_w}" height="{bar_h}" fill="{color}" opacity="0.85" rx="0">'
+            f'<animate attributeName="width" from="0" to="{seg_w}" dur="0.8s" begin="0.3s" fill="freeze" '
+            f'calcMode="spline" keySplines="0.4 0 0.2 1"/></rect>')
+        cx += seg_w
+
+    # Border overlay
+    parts.append(f'<rect x="{bar_x}" y="{bar_y}" width="{bar_w}" height="{bar_h}" '
+                 f'fill="none" stroke="{C["panel_bdr"]}" stroke-width="0.5" rx="7"/>')
+
+    # Percentage on bar
+    if human_pct > 15:
+        parts.append(
+            f'<text x="{bar_x + int(ratio["human"]/total*bar_w/2)}" y="{bar_y + 11}" '
+            f'text-anchor="middle" font-family="{F}" font-size="9" fill="{C["dark"]}" '
+            f'font-weight="600">{human_pct:.0f}%</text>')
+    if ai_pct > 10:
+        ai_cx = bar_x + int(ratio["human"]/total*bar_w) + int(ratio["ai"]/total*bar_w/2)
+        parts.append(
+            f'<text x="{ai_cx}" y="{bar_y + 11}" text-anchor="middle" '
+            f'font-family="{F}" font-size="9" fill="{C["dark"]}" font-weight="600">{ai_pct:.0f}%</text>')
+
+    # Legend
+    lx = ix
+    leg_y = bar_y + bar_h + 14
+    for name, color, count in segments:
+        pct = count / total * 100
+        parts.append(
+            f'<circle cx="{lx + 4}" cy="{leg_y - 3}" r="4" fill="{color}"/>'
+            f'<text x="{lx + 13}" y="{leg_y + 1}" font-family="{F}" font-size="10" '
+            f'fill="{C["txt"]}">{name} <tspan fill="{C["txt2"]}">{pct:.0f}%</tspan></text>')
+        lx += max(len(name) * 8 + 60, 120)
+
+    return "\n    ".join(parts)
+
+
+def svg_commits_panel(events):
+    """Recent Commits panel."""
+    px, py, pw, ph = 16, 316, 818, 190
+    ix, iy = px + 14, py + 14
+
+    header = svg_panel_header(ix, iy + 10, "Recent Commits")
+
     if not events:
-        return (f'<text x="{x}" y="{y+16}" font-family="{F}" font-size="11" '
-                f'fill="{C["dim"]}" opacity="0.4">[ no recent public commits ]</text>')
+        empty = (f'<text x="{ix}" y="{iy + 38}" font-family="{F}" font-size="10" '
+                 f'fill="{C["txt3"]}">No recent public commits</text>')
+        return svg_panel(px, py, pw, ph) + header + empty
+
     rows = []
     for i, ev in enumerate(events):
-        ly = y + i * 28
-        sha, msg, t = ev["sha"], esc(ev["msg"][:48]), reltime(ev["date"])
-        repo = esc(ev["repo"][:14])
+        ry = iy + 22 + i * 32
+        sha = ev["sha"]
+        msg = esc(ev["msg"][:52])
+        t = reltime(ev["date"])
+        repo = esc(ev["repo"][:16])
         rows.append(
             f'<g opacity="0">'
             f'<animate attributeName="opacity" from="0" to="1" dur="0.4s" '
-            f'begin="{0.5 + i*0.18:.2f}s" fill="freeze"/>'
-            f'<rect x="{x-6}" y="{ly}" width="3" height="26" fill="{C["orange"]}" rx="1"/>'
-            f'<circle cx="{x-5}" cy="{ly+13}" r="5" fill="{C["srf"]}" stroke="{C["orange"]}" stroke-width="1.5"/>'
-            f'<rect x="{x+8}" y="{ly+1}" width="748" height="24" fill="{C["tbar"]}" rx="4" opacity="0.3"/>'
-            f'<text x="{x+16}" y="{ly+17}" font-family="{F}" font-size="11">'
-            f'<tspan fill="{C["orange"]}">{sha}</tspan>'
-            f'<tspan fill="{C["dim"]}">  {repo}  </tspan>'
-            f'<tspan fill="{C["txt"]}">{msg}</tspan></text>'
-            f'<text x="800" y="{ly+17}" font-family="{F}" font-size="10" '
-            f'fill="{C["dim"]}" text-anchor="end">{t}</text>'
+            f'begin="{0.3 + i * 0.15:.2f}s" fill="freeze"/>'
+            # Row background
+            f'<rect x="{ix}" y="{ry}" width="{pw - 28}" height="28" fill="{C["hover"]}" rx="6" opacity="0.4"/>'
+            # SHA
+            f'<text x="{ix + 10}" y="{ry + 18}" font-family="{FM}" font-size="11" fill="{C["accent"]}">{sha}</text>'
+            # Repo
+            f'<text x="{ix + 80}" y="{ry + 18}" font-family="{F}" font-size="10" fill="{C["txt2"]}">{repo}</text>'
+            # Message
+            f'<text x="{ix + 200}" y="{ry + 18}" font-family="{F}" font-size="11" fill="{C["txt"]}">{msg}</text>'
+            # Time
+            f'<text x="{ix + pw - 44}" y="{ry + 18}" font-family="{F}" font-size="9" '
+            f'fill="{C["txt3"]}" text-anchor="end">{t}</text>'
             f'</g>')
-    return "\n      ".join(rows)
+
+    return svg_panel(px, py, pw, ph) + header + "\n      ".join(rows)
 
 
-def svg_langs(langs, x, y):
+def svg_langs_panel(langs):
+    """Languages panel."""
+    px, py, pw, ph = 16, 516, 818, 104
+    ix, iy = px + 14, py + 14
+
+    header = svg_panel_header(ix, iy + 10, "Languages")
+
     if not langs:
-        return (f'<text x="{x}" y="{y+12}" font-family="{F}" font-size="10" '
-                f'fill="{C["dim"]}" opacity="0.4">[ add METRICS_TOKEN for private repo data ]</text>')
+        empty = (f'<text x="{ix}" y="{iy + 36}" font-family="{F}" font-size="10" '
+                 f'fill="{C["txt3"]}">Add METRICS_TOKEN secret for private repo data</text>')
+        return svg_panel(px, py, pw, ph) + header + empty
+
     bars = []
     for i, (name, color, pct) in enumerate(langs[:6]):
         col, row = i // 3, i % 3
-        lx, ly = x + col * 390, y + row * 24
+        lx = ix + col * 390
+        ly = iy + 22 + row * 24
         bw = max(int(pct * 1.6), 3)
         bars.append(
-            f'<circle cx="{lx+5}" cy="{ly+7}" r="4.5" fill="{color}"/>'
-            f'<text x="{lx+16}" y="{ly+12}" font-family="{F}" font-size="10" fill="{C["txt"]}">{name[:14]}</text>'
-            f'<rect x="{lx+120}" y="{ly}" width="150" height="12" fill="{C["bdr"]}" rx="5"/>'
-            f'<rect x="{lx+120}" y="{ly}" width="{bw}" height="12" fill="{color}" rx="5" filter="url(#glow2)"/>'
-            f'<text x="{lx+278}" y="{ly+12}" font-family="{F}" font-size="10" fill="{C["dim"]}">{pct:.1f}%</text>')
-    return "\n      ".join(bars)
+            f'<circle cx="{lx + 5}" cy="{ly + 7}" r="4.5" fill="{color}"/>'
+            f'<text x="{lx + 16}" y="{ly + 11}" font-family="{F}" font-size="10" fill="{C["txt"]}">{name[:14]}</text>'
+            f'<rect x="{lx + 120}" y="{ly + 1}" width="150" height="10" fill="{C["panel_bdr"]}" rx="5"/>'
+            f'<rect x="{lx + 120}" y="{ly + 1}" width="{bw}" height="10" fill="{color}" rx="5"/>'
+            f'<text x="{lx + 278}" y="{ly + 11}" font-family="{F}" font-size="10" fill="{C["txt2"]}">{pct:.1f}%</text>')
+
+    return svg_panel(px, py, pw, ph) + header + "\n      ".join(bars)
 
 
-def svg_wave():
+def svg_footer():
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     return (
-        '<g opacity="0.3">'
-        '<path fill="#3D2415"><animate attributeName="d" dur="8s" repeatCount="indefinite" values="'
-        f'M0,{H-30} C100,{H-38} 200,{H-22} 300,{H-30} C400,{H-38} 500,{H-20} 600,{H-30} '
-        f'C700,{H-38} 750,{H-25} {W},{H-30} L{W},{H} L0,{H} Z;'
-        f'M0,{H-25} C100,{H-18} 200,{H-35} 300,{H-25} C400,{H-18} 500,{H-35} 600,{H-25} '
-        f'C700,{H-18} 750,{H-30} {W},{H-25} L{W},{H} L0,{H} Z;'
-        f'M0,{H-30} C100,{H-38} 200,{H-22} 300,{H-30} C400,{H-38} 500,{H-20} 600,{H-30} '
-        f'C700,{H-38} 750,{H-25} {W},{H-30} L{W},{H} L0,{H} Z'
-        '"/></path>'
-        '<path fill="#5A3520"><animate attributeName="d" dur="5s" repeatCount="indefinite" values="'
-        f'M0,{H-20} C140,{H-14} 280,{H-26} 420,{H-20} C560,{H-14} 700,{H-26} {W},{H-18} '
-        f'L{W},{H} L0,{H} Z;'
-        f'M0,{H-18} C140,{H-26} 280,{H-12} 420,{H-20} C560,{H-26} 700,{H-14} {W},{H-22} '
-        f'L{W},{H} L0,{H} Z;'
-        f'M0,{H-20} C140,{H-14} 280,{H-26} 420,{H-20} C560,{H-14} 700,{H-26} {W},{H-18} '
-        f'L{W},{H} L0,{H} Z'
-        '"/></path>'
-        '</g>')
+        f'<text x="{W - 20}" y="{H - 12}" font-family="{F}" font-size="9" '
+        f'fill="{C["txt3"]}" text-anchor="end">Updated {now}</text>'
+    )
 
 
 # ══════════════════════════ ASSEMBLE ══════════════════════════
 
 def generate_svg(stats, events, ai_ratio):
-    commits = stats["commits"]
-    hp_w = int(min(commits / max(commits, 1000), 1.0) * 118)
-    xp_w = int(min(stats["streak"] / 30, 1.0) * 118)
-    c_pct = min(commits / 2000, 1.0) if commits else 0
-    s_pct = min(stats["streak"] / 30, 1.0)
-    f_pct = min(stats["followers"] / 100, 1.0)
-
-    defs = svg_defs()
-    pet = svg_pet(30, 54, ps=9)
-    sparkles = svg_sparkles(24, 46, 156, 130)
-    ring1 = svg_ring(250, 100, 36, c_pct, "#D97757", f'{commits:,}', "commits", 0.2)
-    ring2 = svg_ring(350, 100, 36, s_pct, "#E8A87C", f'{stats["streak"]}d', "streak", 0.5)
-    ring3 = svg_ring(450, 100, 36, f_pct, "#F5E6D3", str(stats["followers"]), "followers", 0.8)
-    heatmap = svg_heatmap(stats["weeks"], 510, 64)
-    collab = svg_collab(ai_ratio, 32, 234, 786)
-    commit_log = svg_commits(events, 40, 324)
-    lang_bars = svg_langs(stats["langs"], 40, 538)
-    wave = svg_wave()
-    now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
-
-    # pet bottom y
-    pet_bot = 54 + 13 * 9  # = 171
-
     return f'''<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}">
-  {defs}
+  {svg_defs()}
 
-  <!-- ═══ SHELL ═══ -->
-  <rect width="{W}" height="{H}" fill="{C['bg']}" rx="14"/>
-  <rect x="1" y="1" width="{W-2}" height="{H-2}" fill="none" stroke="url(#grd)" stroke-width="1.5" rx="13"/>
+  <!-- Window -->
+  <rect width="{W}" height="{H}" fill="{C['win_bg']}" rx="12"/>
+  <rect x="1" y="1" width="{W-2}" height="{H-2}" fill="none" stroke="url(#grd)" stroke-width="1.5" rx="11"/>
 
-  <!-- screen -->
-  <rect x="12" y="12" width="{W-24}" height="{H-24}" fill="{C['srf']}" rx="6"/>
-  <rect x="12" y="12" width="{W-24}" height="{H-24}" fill="none" stroke="url(#grd)" stroke-width="0.4" rx="6" opacity="0.12"/>
+  <!-- Title bar -->
+  {svg_titlebar()}
 
-  <!-- ═══ TITLE BAR ═══ -->
-  <rect x="12" y="12" width="{W-24}" height="28" fill="{C['tbar']}" rx="6"/>
-  <rect x="12" y="32" width="{W-24}" height="8" fill="{C['tbar']}"/>
-  <circle cx="30" cy="26" r="5" fill="#D97757"/>
-  <circle cx="50" cy="26" r="5" fill="#E8A87C"/>
-  <circle cx="70" cy="26" r="5" fill="#F5E6D3"/>
-  <text x="{W//2}" y="30" font-family="{F}" font-size="12" fill="{C['dim']}" text-anchor="middle">bigmacfive@github ~ dashboard.sh</text>
+  <!-- Row 1: Pet | Stats | Heatmap -->
+  {svg_pet_panel(stats)}
+  {svg_stats_panel(stats)}
+  {svg_heatmap_panel(stats["weeks"])}
 
-  <!-- ═══════════════ UPPER: PET + RINGS + HEATMAP ═══════════════ -->
+  <!-- Row 2: AI Collaboration -->
+  {svg_collab_panel(ai_ratio)}
 
-  <!-- pixel pet -->
-  <g class="pet">{pet}</g>
-  {sparkles}
-  <text x="{30+72}" y="{pet_bot+16}" font-family="{F}" font-size="11" fill="{C['green']}" text-anchor="middle" filter="url(#glow)">&#9670; LV.{stats['years']} &#9670;</text>
+  <!-- Row 3: Recent Commits -->
+  {svg_commits_panel(events)}
 
-  <!-- HP -->
-  <text x="30" y="{pet_bot+32}" font-family="{F}" font-size="9" fill="{C['green']}">HP</text>
-  <rect x="52" y="{pet_bot+23}" width="120" height="9" fill="{C['bdr']}" rx="4"/>
-  <rect x="52" y="{pet_bot+23}" width="{hp_w}" height="9" fill="url(#hpg)" rx="4">
-    <animate attributeName="opacity" values="0.85;1;0.85" dur="3s" repeatCount="indefinite"/>
-  </rect>
-  <!-- XP -->
-  <text x="30" y="{pet_bot+46}" font-family="{F}" font-size="9" fill="{C['accent']}">XP</text>
-  <rect x="52" y="{pet_bot+37}" width="120" height="9" fill="{C['bdr']}" rx="4"/>
-  <rect x="52" y="{pet_bot+37}" width="{xp_w}" height="9" fill="url(#xpg)" rx="4"/>
+  <!-- Row 4: Languages -->
+  {svg_langs_panel(stats["langs"])}
 
-  <!-- stat rings -->
-  {ring1}
-  {ring2}
-  {ring3}
-  <text x="250" y="160" text-anchor="middle" font-family="{F}" font-size="9" fill="{C['dim']}">stars {stats['stars']}</text>
-  <text x="350" y="160" text-anchor="middle" font-family="{F}" font-size="9" fill="{C['dim']}">repos {stats['repos']}</text>
-  <text x="450" y="160" text-anchor="middle" font-family="{F}" font-size="9" fill="{C['dim']}">joined {stats['years']}y</text>
-
-  <!-- divider -->
-  <line x1="490" y1="46" x2="490" y2="200" stroke="{C['bdr']}" stroke-width="0.5" opacity="0.4"/>
-
-  <!-- heatmap -->
-  <text x="510" y="56" font-family="{F}" font-size="11" fill="{C['green']}" filter="url(#glow2)">contributions</text>
-  {heatmap}
-  <text x="510" y="144" font-family="{F}" font-size="8" fill="{C['dim']}">less</text>
-  <rect x="534" y="136" width="8" height="8" fill="#211A14" rx="1.5"/>
-  <rect x="544" y="136" width="8" height="8" fill="#4A2C1A" rx="1.5"/>
-  <rect x="554" y="136" width="8" height="8" fill="#7A4528" rx="1.5"/>
-  <rect x="564" y="136" width="8" height="8" fill="#B85F35" rx="1.5"/>
-  <rect x="574" y="136" width="8" height="8" fill="#D97757" rx="1.5"/>
-  <text x="586" y="144" font-family="{F}" font-size="8" fill="{C['dim']}">more</text>
-
-  <!-- ═══ DIVIDER ═══ -->
-  <line x1="28" y1="218" x2="822" y2="218" stroke="{C['bdr']}" stroke-width="0.5" stroke-dasharray="3,3"/>
-
-  <!-- ═══════════════ AI COLLAB RATIO ═══════════════ -->
-  {collab}
-
-  <!-- ═══ DIVIDER ═══ -->
-  <line x1="28" y1="302" x2="822" y2="302" stroke="{C['bdr']}" stroke-width="0.5" stroke-dasharray="3,3"/>
-
-  <!-- ═══════════════ COMMIT LOG ═══════════════ -->
-  <text x="32" y="320" font-family="{F}" font-size="12" fill="{C['orange']}" filter="url(#glow)">$ git log --oneline</text>
-  <rect x="235" y="309" width="8" height="14" fill="{C['green']}">
-    <animate attributeName="opacity" values="1;0;1" dur="1s" repeatCount="indefinite"/>
-  </rect>
-  {commit_log}
-
-  <!-- ═══ DIVIDER ═══ -->
-  <line x1="28" y1="520" x2="822" y2="520" stroke="{C['bdr']}" stroke-width="0.5" stroke-dasharray="3,3"/>
-
-  <!-- ═══════════════ LANGUAGES ═══════════════ -->
-  <text x="32" y="536" font-family="{F}" font-size="12" fill="{C['green']}" filter="url(#glow)">$ tokei --sort code</text>
-  {lang_bars}
-
-  <!-- ═══ FOOTER ═══ -->
-  <line x1="12" y1="{H-28}" x2="{W-12}" y2="{H-28}" stroke="{C['bdr']}" stroke-width="0.3"/>
-  <circle cx="{W//2-55}" cy="{H-14}" r="6" fill="{C['tbar']}" stroke="{C['bdr']}" stroke-width="1"/>
-  <text x="{W//2-55}" y="{H-11}" font-family="{F}" font-size="7" fill="{C['dim']}" text-anchor="middle">A</text>
-  <circle cx="{W//2}" cy="{H-14}" r="6" fill="{C['tbar']}" stroke="{C['bdr']}" stroke-width="1"/>
-  <text x="{W//2}" y="{H-11}" font-family="{F}" font-size="7" fill="{C['dim']}" text-anchor="middle">B</text>
-  <circle cx="{W//2+55}" cy="{H-14}" r="6" fill="{C['tbar']}" stroke="{C['bdr']}" stroke-width="1"/>
-  <text x="{W//2+55}" y="{H-11}" font-family="{F}" font-size="7" fill="{C['dim']}" text-anchor="middle">C</text>
-
-  {wave}
-
-  <!-- CRT scan line -->
-  <rect width="{W}" height="2" fill="#F5E6D3" opacity="0.008">
-    <animateTransform attributeName="transform" type="translate" from="0 -2" to="0 {H}" dur="8s" repeatCount="indefinite"/>
-  </rect>
-
-  <text x="822" y="{H-8}" font-family="{F}" font-size="8" fill="{C['bdr']}" text-anchor="end">{now}</text>
+  <!-- Footer -->
+  {svg_footer()}
 </svg>'''
 
 
@@ -560,14 +566,11 @@ def main():
     stats = fetch_stats()
     print(f"  commits={stats['commits']} streak={stats['streak']} "
           f"langs={len(stats['langs'])} weeks={len(stats['weeks'])}")
-
     events = fetch_events()
     print(f"  {len(events)} recent commits")
-
     ai_ratio = fetch_ai_ratio()
     print(f"  AI ratio: {ai_ratio['ai']}/{ai_ratio['total']} "
           f"({', '.join(f'{k}:{v}' for k,v in ai_ratio['tools'].items()) or 'none'})")
-
     svg = generate_svg(stats, events, ai_ratio)
     with open("profile.svg", "w", encoding="utf-8") as f:
         f.write(svg)

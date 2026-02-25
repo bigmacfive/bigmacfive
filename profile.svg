@@ -1,0 +1,139 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="280" viewBox="0 0 480 280">
+  <defs>
+    <style>@import url('https://fonts.googleapis.com/css2?family=VT323&amp;display=swap');</style>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="1.5" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <clipPath id="clip"><rect x="18" y="18" width="444" height="240" rx="6"/></clipPath>
+  </defs>
+
+  <!-- shell -->
+  <rect width="480" height="280" fill="#0d1117" rx="12"/>
+  <rect x="1" y="1" width="478" height="278" fill="none" stroke="#21262d" stroke-width="1.5" rx="11.5"/>
+
+  <!-- screen -->
+  <rect x="18" y="18" width="444" height="240" fill="#010409" rx="6"/>
+  <rect x="18" y="18" width="444" height="240" fill="none" stroke="#1f6feb" stroke-width="0.8" rx="6" opacity="0.4"/>
+
+  <!-- title bar -->
+  <rect x="18" y="18" width="444" height="24" fill="#161b22" rx="6"/>
+  <rect x="18" y="34" width="444" height="8" fill="#161b22"/>
+  <circle cx="34" cy="30" r="4.5" fill="#ff5f57"/>
+  <circle cx="50" cy="30" r="4.5" fill="#febc2e"/>
+  <circle cx="66" cy="30" r="4.5" fill="#28c840"/>
+  <text x="240" y="34" font-family="monospace" font-size="10" fill="#484f58" text-anchor="middle">bigmacfive — profile.sh</text>
+
+  <!-- pixel pet -->
+  <rect x="73" y="52" width="9" height="9" fill="#39d353"/>
+  <rect x="82" y="52" width="9" height="9" fill="#39d353"/>
+  <rect x="91" y="52" width="9" height="9" fill="#39d353"/>
+  <rect x="100" y="52" width="9" height="9" fill="#39d353"/>
+  <rect x="64" y="61" width="9" height="9" fill="#39d353"/>
+  <rect x="73" y="61" width="9" height="9" fill="#39d353"/>
+  <rect x="82" y="61" width="9" height="9" fill="#39d353"/>
+  <rect x="91" y="61" width="9" height="9" fill="#39d353"/>
+  <rect x="100" y="61" width="9" height="9" fill="#39d353"/>
+  <rect x="109" y="61" width="9" height="9" fill="#39d353"/>
+  <rect x="55" y="70" width="9" height="9" fill="#39d353"/>
+  <rect x="64" y="70" width="9" height="9" fill="#39d353"/>
+  <rect x="73" y="70" width="9" height="9" fill="#0d1117"/>
+  <rect x="82" y="70" width="9" height="9" fill="#0d1117"/>
+  <rect x="91" y="70" width="9" height="9" fill="#39d353"/>
+  <rect x="100" y="70" width="9" height="9" fill="#0d1117"/>
+  <rect x="109" y="70" width="9" height="9" fill="#0d1117"/>
+  <rect x="118" y="70" width="9" height="9" fill="#39d353"/>
+  <rect x="55" y="79" width="9" height="9" fill="#39d353"/>
+  <rect x="64" y="79" width="9" height="9" fill="#39d353"/>
+  <rect x="73" y="79" width="9" height="9" fill="#0d1117"/>
+  <rect x="82" y="79" width="9" height="9" fill="#0d1117"/>
+  <rect x="91" y="79" width="9" height="9" fill="#39d353"/>
+  <rect x="100" y="79" width="9" height="9" fill="#0d1117"/>
+  <rect x="109" y="79" width="9" height="9" fill="#0d1117"/>
+  <rect x="118" y="79" width="9" height="9" fill="#39d353"/>
+  <rect x="55" y="88" width="9" height="9" fill="#39d353"/>
+  <rect x="64" y="88" width="9" height="9" fill="#39d353"/>
+  <rect x="73" y="88" width="9" height="9" fill="#39d353"/>
+  <rect x="82" y="88" width="9" height="9" fill="#39d353"/>
+  <rect x="91" y="88" width="9" height="9" fill="#39d353"/>
+  <rect x="100" y="88" width="9" height="9" fill="#39d353"/>
+  <rect x="109" y="88" width="9" height="9" fill="#39d353"/>
+  <rect x="118" y="88" width="9" height="9" fill="#39d353"/>
+  <rect x="55" y="97" width="9" height="9" fill="#39d353"/>
+  <rect x="64" y="97" width="9" height="9" fill="#0d1117"/>
+  <rect x="73" y="97" width="9" height="9" fill="#39d353"/>
+  <rect x="82" y="97" width="9" height="9" fill="#0d1117"/>
+  <rect x="91" y="97" width="9" height="9" fill="#0d1117"/>
+  <rect x="100" y="97" width="9" height="9" fill="#39d353"/>
+  <rect x="109" y="97" width="9" height="9" fill="#0d1117"/>
+  <rect x="118" y="97" width="9" height="9" fill="#39d353"/>
+  <rect x="64" y="106" width="9" height="9" fill="#39d353"/>
+  <rect x="73" y="106" width="9" height="9" fill="#39d353"/>
+  <rect x="82" y="106" width="9" height="9" fill="#39d353"/>
+  <rect x="91" y="106" width="9" height="9" fill="#39d353"/>
+  <rect x="100" y="106" width="9" height="9" fill="#39d353"/>
+  <rect x="109" y="106" width="9" height="9" fill="#39d353"/>
+  <rect x="64" y="115" width="9" height="9" fill="#39d353"/>
+  <rect x="109" y="115" width="9" height="9" fill="#39d353"/>
+
+  <!-- pet level -->
+  <text x="91" y="148" font-family="monospace" font-size="8" fill="#39d353" text-anchor="middle" filter="url(#glow)">&#9670; LV.8 &#9670;</text>
+
+  <!-- HP bar -->
+  <text x="46" y="164" font-family="monospace" font-size="8" fill="#39d353">HP</text>
+  <rect x="63" y="155" width="140" height="8" fill="#21262d" rx="3"/>
+  <rect x="63" y="155" width="1" height="8" fill="#39d353" rx="3" filter="url(#glow)"/>
+
+  <!-- divider -->
+  <line x1="218" y1="44" x2="218" y2="250" stroke="#21262d" stroke-width="1"/>
+
+  <!-- stats -->
+  <text x="236" y="58" font-family="monospace" font-size="10" fill="#39d353" filter="url(#glow)">$ cat stats</text>
+  <text x="236" y="78"  font-family="monospace" font-size="9" fill="#6e7681">commits  <tspan fill="#e6edf3">9</tspan></text>
+  <text x="236" y="95"  font-family="monospace" font-size="9" fill="#6e7681">streak   <tspan fill="#e6edf3">4d</tspan></text>
+  <text x="236" y="112" font-family="monospace" font-size="9" fill="#6e7681">followers<tspan fill="#e6edf3"> 15</tspan></text>
+  <text x="236" y="129" font-family="monospace" font-size="9" fill="#6e7681">stars    <tspan fill="#e6edf3"> 1</tspan></text>
+  <text x="236" y="146" font-family="monospace" font-size="9" fill="#6e7681">repos    <tspan fill="#e6edf3"> 10</tspan></text>
+  <text x="236" y="163" font-family="monospace" font-size="9" fill="#6e7681">joined   <tspan fill="#e6edf3"> 8yr ago</tspan></text>
+
+  <!-- lang header -->
+  <line x1="236" y1="173" x2="460" y2="173" stroke="#21262d" stroke-width="1"/>
+  <text x="236" y="182" font-family="monospace" font-size="10" fill="#39d353" filter="url(#glow)">$ cat langs</text>
+
+  <!-- language bars -->
+  <text x="240" y="191" font-family="monospace" font-size="8" fill="#6e7681">Makefile</text>
+  <rect x="345" y="182" width="150" height="8" fill="#21262d" rx="3"/>
+  <rect x="345" y="182" width="70" height="8" fill="#427819" rx="3"/>
+  <text x="500" y="191" font-family="monospace" font-size="8" fill="#6e7681">46.8%</text>
+  <text x="240" y="207" font-family="monospace" font-size="8" fill="#6e7681">Rust</text>
+  <rect x="345" y="198" width="150" height="8" fill="#21262d" rx="3"/>
+  <rect x="345" y="198" width="51" height="8" fill="#dea584" rx="3"/>
+  <text x="500" y="207" font-family="monospace" font-size="8" fill="#6e7681">34.5%</text>
+  <text x="240" y="223" font-family="monospace" font-size="8" fill="#6e7681">TypeScript</text>
+  <rect x="345" y="214" width="150" height="8" fill="#21262d" rx="3"/>
+  <rect x="345" y="214" width="11" height="8" fill="#3178c6" rx="3"/>
+  <text x="500" y="223" font-family="monospace" font-size="8" fill="#6e7681">7.7%</text>
+  <text x="240" y="239" font-family="monospace" font-size="8" fill="#6e7681">C++</text>
+  <rect x="345" y="230" width="150" height="8" fill="#21262d" rx="3"/>
+  <rect x="345" y="230" width="5" height="8" fill="#f34b7d" rx="3"/>
+  <text x="500" y="239" font-family="monospace" font-size="8" fill="#6e7681">3.9%</text>
+
+  <!-- horizontal divider above footer -->
+  <line x1="18" y1="258" x2="462" y2="258" stroke="#21262d" stroke-width="1"/>
+
+  <!-- cursor blink -->
+  <rect x="448" y="243" width="5" height="9" fill="#39d353">
+    <animate attributeName="opacity" values="1;0;1" dur="1.2s" repeatCount="indefinite"/>
+  </rect>
+
+  <!-- footer buttons (Tamagotchi) -->
+  <circle cx="140" cy="270" r="7" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+  <text x="140" y="274" font-family="monospace" font-size="7" fill="#484f58" text-anchor="middle">A</text>
+  <circle cx="240" cy="270" r="7" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+  <text x="240" y="274" font-family="monospace" font-size="7" fill="#484f58" text-anchor="middle">B</text>
+  <circle cx="340" cy="270" r="7" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+  <text x="340" y="274" font-family="monospace" font-size="7" fill="#484f58" text-anchor="middle">C</text>
+
+  <!-- timestamp -->
+  <text x="459" y="277" font-family="monospace" font-size="7" fill="#21262d" text-anchor="end">updated 2026-02-25</text>
+</svg>

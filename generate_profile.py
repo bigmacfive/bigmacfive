@@ -1,22 +1,25 @@
 #!/usr/bin/env python3
-"""Tamagotchi-style GitHub Profile Dashboard Generator v2
+"""GitHub Profile Dashboard v3 — Neon Terminal
 
-Generates an animated profile.svg with:
-- Pixel art pet (bouncing + blinking)
-- Stats panel
+Features:
+- Animated rainbow gradient border
+- Circular progress rings with draw-in animation
+- Pixel art pet with float + blink + sparkle particles
 - Contribution heatmap (real data)
-- Recent commit log (staggered fade-in)
-- Language bars
-- CRT scan line effect
+- Commit log with staggered fade-in + git branch line
+- Language bars with glow
+- Animated wave footer
+- CRT scan line
 """
 
-import os, requests
+import os, requests, random
 from datetime import datetime, timezone, timedelta
 from html import escape as esc
+from math import pi
 
 USERNAME = "bigmacfive"
 TOKEN = os.environ.get("GITHUB_TOKEN", "")
-W, H = 800, 430
+W, H = 800, 440
 
 # ── Pixel Art Pet (12×9)  0=clear 1=body 2=eye 3=highlight ──
 PET = [
@@ -31,12 +34,14 @@ PET = [
     [0,0,1,0,0,1,1,0,0,1,0,0],
 ]
 
-C = {  # color palette
+C = {
     "body": "#39d353", "hi": "#7ee787", "dark": "#0d1117",
     "bg": "#0d1117", "srf": "#010409", "bdr": "#21262d",
     "accent": "#1f6feb", "green": "#39d353", "orange": "#f78166",
-    "txt": "#e6edf3", "dim": "#6e7681", "tbar": "#161b22",
+    "purple": "#bc8cff", "txt": "#e6edf3", "dim": "#6e7681",
+    "tbar": "#161b22",
 }
+F = "'Courier New', monospace"
 
 
 # ══════════════════════════ DATA FETCHING ══════════════════════════
@@ -78,10 +83,8 @@ def fetch_stats():
     cc = u["contributionsCollection"]
     cal = cc["contributionCalendar"]
 
-    # streak
-    days = sorted(
-        [d for w in cal["weeks"] for d in w["contributionDays"]],
-        key=lambda d: d["date"], reverse=True)
+    days = sorted([d for w in cal["weeks"] for d in w["contributionDays"]],
+                  key=lambda d: d["date"], reverse=True)
     streak, today = 0, datetime.now(timezone.utc).date()
     for day in days:
         exp = today - timedelta(days=streak)
@@ -90,7 +93,6 @@ def fetch_stats():
         elif datetime.fromisoformat(day["date"]).date() < exp:
             break
 
-    # languages
     ld, stars = {}, 0
     for repo in u["repositories"]["nodes"]:
         stars += repo.get("stargazerCount", 0)
@@ -144,7 +146,30 @@ def reltime(dt):
     return f"{d//30}mo ago"
 
 
-# ══════════════════════════ SVG RENDERERS ══════════════════════════
+# ══════════════════════════ SVG COMPONENTS ══════════════════════════
+
+def svg_defs():
+    return f'''<defs>
+    <style>
+      .eye  {{ animation: blink 4s step-end infinite; }}
+      .pet  {{ animation: float 3s ease-in-out infinite; }}
+      @keyframes blink  {{ 0%,92% {{ opacity:1 }} 93%,97% {{ opacity:0 }} 98% {{ opacity:1 }} }}
+      @keyframes float  {{ 0%,100% {{ transform:translateY(0) }} 50% {{ transform:translateY(-5px) }} }}
+    </style>
+    <!-- animated gradient border -->
+    <linearGradient id="grd" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%"><animate attributeName="stop-color" values="{C['green']};{C['accent']};{C['purple']};{C['orange']};{C['green']}" dur="10s" repeatCount="indefinite"/></stop>
+      <stop offset="50%"><animate attributeName="stop-color" values="{C['accent']};{C['purple']};{C['orange']};{C['green']};{C['accent']}" dur="10s" repeatCount="indefinite"/></stop>
+      <stop offset="100%"><animate attributeName="stop-color" values="{C['purple']};{C['orange']};{C['green']};{C['accent']};{C['purple']}" dur="10s" repeatCount="indefinite"/></stop>
+    </linearGradient>
+    <!-- glow filters -->
+    <filter id="glow"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <filter id="glow2"><feGaussianBlur stdDeviation="1.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <!-- bar gradients -->
+    <linearGradient id="hpg"><stop offset="0%" stop-color="#39d353"/><stop offset="100%" stop-color="#7ee787"/></linearGradient>
+    <linearGradient id="xpg"><stop offset="0%" stop-color="#1f6feb"/><stop offset="100%" stop-color="#79c0ff"/></linearGradient>
+  </defs>'''
+
 
 def svg_pet(bx, by, ps=8):
     px = []
@@ -152,13 +177,46 @@ def svg_pet(bx, by, ps=8):
         for cx, cell in enumerate(row):
             if cell == 0: continue
             x, y = bx + cx * ps, by + ry * ps
-            if cell == 1:
-                px.append(f'<rect x="{x}" y="{y}" width="{ps}" height="{ps}" fill="{C["body"]}"/>')
-            elif cell == 2:
-                px.append(f'<rect x="{x}" y="{y}" width="{ps}" height="{ps}" fill="{C["dark"]}" class="eye"/>')
-            elif cell == 3:
-                px.append(f'<rect x="{x}" y="{y}" width="{ps}" height="{ps}" fill="{C["hi"]}" class="eye"/>')
+            col = {1: C["body"], 2: C["dark"], 3: C["hi"]}[cell]
+            cls = ' class="eye"' if cell in (2, 3) else ""
+            px.append(f'<rect x="{x}" y="{y}" width="{ps}" height="{ps}" fill="{col}"{cls}/>')
     return "\n      ".join(px)
+
+
+def svg_sparkles(bx, by, w, h):
+    random.seed(42)
+    parts = []
+    for _ in range(10):
+        x = bx + random.randint(-10, w + 10)
+        y = by + random.randint(-10, h + 10)
+        r = random.choice([1, 1.5, 2])
+        dur = round(random.uniform(2, 4), 1)
+        begin = round(random.uniform(0, 4), 1)
+        col = random.choice([C["green"], C["hi"], C["accent"]])
+        parts.append(
+            f'<circle cx="{x}" cy="{y}" r="{r}" fill="{col}" opacity="0">'
+            f'<animate attributeName="opacity" values="0;0.9;0" dur="{dur}s" begin="{begin}s" repeatCount="indefinite"/>'
+            f'</circle>')
+    return "\n    ".join(parts)
+
+
+def svg_ring(cx, cy, r, pct, color, value, label, delay=0):
+    circ = 2 * pi * r
+    offset = circ * (1 - min(pct, 1.0))
+    return (
+        f'<circle cx="{cx}" cy="{cy}" r="{r}" stroke="#21262d" stroke-width="5" fill="none"/>'
+        f'<circle cx="{cx}" cy="{cy}" r="{r}" stroke="{color}" stroke-width="5" fill="none" '
+        f'stroke-dasharray="{circ:.1f}" stroke-dashoffset="{circ:.1f}" '
+        f'stroke-linecap="round" transform="rotate(-90 {cx} {cy})" filter="url(#glow2)">'
+        f'<animate attributeName="stroke-dashoffset" from="{circ:.1f}" to="{offset:.1f}" '
+        f'dur="1.5s" begin="{delay}s" fill="freeze" calcMode="spline" keySplines="0.4 0 0.2 1"/>'
+        f'</circle>'
+        f'<text x="{cx}" y="{cy+5}" text-anchor="middle" font-family="{F}" '
+        f'font-size="13" fill="{C["txt"]}" font-weight="bold" opacity="0">'
+        f'<animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="{delay+0.8}s" fill="freeze"/>'
+        f'{value}</text>'
+        f'<text x="{cx}" y="{cy+r+16}" text-anchor="middle" font-family="{F}" '
+        f'font-size="8" fill="{C["dim"]}">{label}</text>')
 
 
 def heatmap_color(n):
@@ -169,202 +227,208 @@ def heatmap_color(n):
     return "#39d353"
 
 
-def svg_heatmap(weeks, bx, by, cs=8, gap=2):
-    recent = weeks[-18:] if weeks else []
+def svg_heatmap(weeks, bx, by, cs=7, gap=2):
+    recent = weeks[-20:] if weeks else []
     rects = []
     for wi, wk in enumerate(recent):
         for di, day in enumerate(wk["contributionDays"]):
             x = bx + wi * (cs + gap)
             y = by + di * (cs + gap)
             col = heatmap_color(day["contributionCount"])
-            rects.append(f'<rect x="{x}" y="{y}" width="{cs}" height="{cs}" '
-                         f'fill="{col}" rx="1.5"/>')
+            rects.append(f'<rect x="{x}" y="{y}" width="{cs}" height="{cs}" fill="{col}" rx="1.5"/>')
     return "\n      ".join(rects)
 
 
 def svg_commits(events, x, y):
     if not events:
-        return (f'<text x="{x}" y="{y+14}" font-family="\'Courier New\', monospace" '
+        return (f'<text x="{x}" y="{y+14}" font-family="{F}" '
                 f'font-size="9" fill="{C["dim"]}" opacity="0.4">'
                 f'[ no recent public commits ]</text>')
     rows = []
     for i, ev in enumerate(events):
         ly = y + i * 22
-        sha = ev["sha"]
-        msg = esc(ev["msg"][:44])
-        t = reltime(ev["date"])
+        sha, msg, t = ev["sha"], esc(ev["msg"][:44]), reltime(ev["date"])
         repo = esc(ev["repo"][:14])
+        # git branch line
         rows.append(
             f'<g opacity="0">'
-            f'<animate attributeName="opacity" from="0" to="1" dur="0.4s" '
-            f'begin="{0.3 + i*0.15:.2f}s" fill="freeze"/>'
-            f'<rect x="{x-4}" y="{ly}" width="740" height="18" fill="{C["tbar"]}" rx="3" opacity="0.3"/>'
-            f'<text x="{x}" y="{ly+13}" font-family="\'Courier New\', monospace" font-size="9">'
+            f'<animate attributeName="opacity" from="0" to="1" dur="0.4s" begin="{0.5 + i*0.2:.1f}s" fill="freeze"/>'
+            f'<rect x="{x-6}" y="{ly}" width="3" height="20" fill="{C["orange"]}" rx="1"/>'
+            f'<circle cx="{x-5}" cy="{ly+10}" r="4" fill="{C["srf"]}" stroke="{C["orange"]}" stroke-width="1.5"/>'
+            f'<rect x="{x+6}" y="{ly+1}" width="732" height="18" fill="{C["tbar"]}" rx="3" opacity="0.35"/>'
+            f'<text x="{x+12}" y="{ly+13}" font-family="{F}" font-size="9">'
             f'<tspan fill="{C["orange"]}">{sha}</tspan>'
-            f'<tspan fill="{C["dim"]}">  {repo:14s} </tspan>'
-            f'<tspan fill="{C["txt"]}">{msg}</tspan>'
-            f'</text>'
-            f'<text x="760" y="{ly+13}" font-family="\'Courier New\', monospace" '
-            f'font-size="8" fill="{C["dim"]}" text-anchor="end">{t}</text>'
+            f'<tspan fill="{C["dim"]}">  {repo}  </tspan>'
+            f'<tspan fill="{C["txt"]}">{msg}</tspan></text>'
+            f'<text x="766" y="{ly+13}" font-family="{F}" font-size="8" fill="{C["dim"]}" text-anchor="end">{t}</text>'
             f'</g>')
     return "\n      ".join(rows)
 
 
 def svg_langs(langs, x, y):
     if not langs:
-        return (f'<text x="{x}" y="{y+10}" font-family="\'Courier New\', monospace" '
+        return (f'<text x="{x}" y="{y+10}" font-family="{F}" '
                 f'font-size="8" fill="{C["dim"]}" opacity="0.4">'
                 f'[ add METRICS_TOKEN for private repo data ]</text>')
     bars = []
     for i, (name, color, pct) in enumerate(langs[:6]):
-        col = i // 3
-        row = i % 3
-        lx = x + col * 370
-        ly = y + row * 18
+        col, row = i // 3, i % 3
+        lx, ly = x + col * 370, y + row * 18
         bw = max(int(pct * 1.3), 2)
         bars.append(
-            f'<text x="{lx}" y="{ly+10}" font-family="\'Courier New\', monospace" '
-            f'font-size="8" fill="{C["dim"]}">{name[:12]}</text>'
-            f'\n      <rect x="{lx+100}" y="{ly+1}" width="130" height="8" fill="#21262d" rx="3"/>'
-            f'\n      <rect x="{lx+100}" y="{ly+1}" width="{bw}" height="8" fill="{color}" rx="3"/>'
-            f'\n      <text x="{lx+236}" y="{ly+10}" font-family="\'Courier New\', monospace" '
-            f'font-size="8" fill="{C["dim"]}">{pct:.1f}%</text>')
+            f'<circle cx="{lx+4}" cy="{ly+5}" r="3" fill="{color}"/>'
+            f'<text x="{lx+12}" y="{ly+9}" font-family="{F}" font-size="8" fill="{C["txt"]}">{name[:12]}</text>'
+            f'<rect x="{lx+105}" y="{ly}" width="130" height="9" fill="#21262d" rx="4"/>'
+            f'<rect x="{lx+105}" y="{ly}" width="{bw}" height="9" fill="{color}" rx="4" filter="url(#glow2)"/>'
+            f'<text x="{lx+242}" y="{ly+9}" font-family="{F}" font-size="8" fill="{C["dim"]}">{pct:.1f}%</text>')
     return "\n      ".join(bars)
 
 
-# ══════════════════════════ MAIN SVG ASSEMBLY ══════════════════════════
+def svg_wave():
+    return (
+        '<g opacity="0.3">'
+        '<path fill="#0e4429">'
+        '<animate attributeName="d" dur="8s" repeatCount="indefinite" values="'
+        'M0,420 C80,412 160,428 240,418 C320,408 400,425 480,418 C560,411 640,426 720,418 C760,414 780,420 800,416 L800,440 L0,440 Z;'
+        'M0,418 C80,425 160,410 240,420 C320,428 400,412 480,422 C560,428 640,414 720,422 C760,425 780,416 800,420 L800,440 L0,440 Z;'
+        'M0,420 C80,412 160,428 240,418 C320,408 400,425 480,418 C560,411 640,426 720,418 C760,414 780,420 800,416 L800,440 L0,440 Z'
+        '"/></path>'
+        '<path fill="#006d32">'
+        '<animate attributeName="d" dur="6s" repeatCount="indefinite" values="'
+        'M0,425 C120,418 240,430 360,422 C480,414 600,428 720,422 L800,424 L800,440 L0,440 Z;'
+        'M0,422 C120,430 240,416 360,426 C480,430 600,418 720,426 L800,420 L800,440 L0,440 Z;'
+        'M0,425 C120,418 240,430 360,422 C480,414 600,428 720,422 L800,424 L800,440 L0,440 Z'
+        '"/></path>'
+        '</g>')
+
+
+# ══════════════════════════ ASSEMBLE ══════════════════════════
 
 def generate_svg(stats, events):
     commits = stats["commits"]
-    hp_w = int(min(commits / max(commits, 1000), 1.0) * 110)
-    xp_w = int(min(stats["streak"] / 30, 1.0) * 110)
+    hp_w = int(min(commits / max(commits, 1000), 1.0) * 108)
+    xp_w = int(min(stats["streak"] / 30, 1.0) * 108)
+
+    # ring percentages
+    c_pct = min(commits / 2000, 1.0) if commits else 0
+    s_pct = min(stats["streak"] / 30, 1.0)
+    f_pct = min(stats["followers"] / 100, 1.0)
+
+    defs = svg_defs()
     pet = svg_pet(40, 58, ps=8)
-    heatmap = svg_heatmap(stats["weeks"], 420, 72)
-    commit_log = svg_commits(events, 34, 230)
-    lang_bars = svg_langs(stats["langs"], 34, 356)
+    sparkles = svg_sparkles(30, 48, 110, 90)
+    ring1 = svg_ring(220, 100, 32, c_pct, C["green"], f'{commits:,}', "commits", 0.2)
+    ring2 = svg_ring(310, 100, 32, s_pct, C["accent"], f'{stats["streak"]}d', "streak", 0.5)
+    ring3 = svg_ring(400, 100, 32, f_pct, C["purple"], str(stats["followers"]), "followers", 0.8)
+    heatmap = svg_heatmap(stats["weeks"], 470, 62)
+    commit_log = svg_commits(events, 34, 218)
+    lang_bars = svg_langs(stats["langs"], 34, 365)
+    wave = svg_wave()
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 
     return f'''<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}">
-  <defs>
-    <style>
-      .eye {{ animation: blink 4s step-end infinite; }}
-      .pet {{ animation: float 3s ease-in-out infinite; }}
-      .hp  {{ animation: pulse 3s ease-in-out infinite; }}
-      @keyframes blink  {{ 0%,92% {{ opacity:1 }} 93%,97% {{ opacity:0 }} 98% {{ opacity:1 }} }}
-      @keyframes float  {{ 0%,100% {{ transform:translateY(0) }} 50% {{ transform:translateY(-5px) }} }}
-      @keyframes pulse  {{ 0%,100% {{ opacity:.85 }} 50% {{ opacity:1 }} }}
-    </style>
-    <filter id="glow">
-      <feGaussianBlur stdDeviation="2" result="b"/>
-      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-    </filter>
-    <linearGradient id="hpg" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0%" stop-color="#39d353"/><stop offset="100%" stop-color="#7ee787"/>
-    </linearGradient>
-    <linearGradient id="xpg" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0%" stop-color="#1f6feb"/><stop offset="100%" stop-color="#79c0ff"/>
-    </linearGradient>
-  </defs>
+  {defs}
 
   <!-- ═══ SHELL ═══ -->
   <rect width="{W}" height="{H}" fill="{C['bg']}" rx="12"/>
-  <rect x="1" y="1" width="{W-2}" height="{H-2}" fill="none" stroke="{C['bdr']}" stroke-width="1" rx="11"/>
+  <!-- animated gradient border -->
+  <rect x="1" y="1" width="{W-2}" height="{H-2}" fill="none" stroke="url(#grd)" stroke-width="1.5" rx="11"/>
 
-  <!-- ═══ SCREEN ═══ -->
-  <rect x="14" y="14" width="772" height="402" fill="{C['srf']}" rx="6"/>
-  <rect x="14" y="14" width="772" height="402" fill="none" stroke="{C['accent']}" stroke-width="0.5" rx="6" opacity="0.25"/>
+  <!-- screen -->
+  <rect x="12" y="12" width="776" height="416" fill="{C['srf']}" rx="6"/>
+  <rect x="12" y="12" width="776" height="416" fill="none" stroke="url(#grd)" stroke-width="0.5" rx="6" opacity="0.15"/>
 
   <!-- ═══ TITLE BAR ═══ -->
-  <rect x="14" y="14" width="772" height="26" fill="{C['tbar']}" rx="6"/>
-  <rect x="14" y="32" width="772" height="8" fill="{C['tbar']}"/>
-  <circle cx="32" cy="27" r="4.5" fill="#ff5f57"/>
-  <circle cx="50" cy="27" r="4.5" fill="#febc2e"/>
-  <circle cx="68" cy="27" r="4.5" fill="#28c840"/>
-  <text x="400" y="31" font-family="'Courier New', monospace" font-size="11" fill="{C['dim']}" text-anchor="middle">bigmacfive — dashboard.sh</text>
+  <rect x="12" y="12" width="776" height="26" fill="{C['tbar']}" rx="6"/>
+  <rect x="12" y="30" width="776" height="8" fill="{C['tbar']}"/>
+  <circle cx="30" cy="25" r="4.5" fill="#ff5f57"/>
+  <circle cx="48" cy="25" r="4.5" fill="#febc2e"/>
+  <circle cx="66" cy="25" r="4.5" fill="#28c840"/>
+  <text x="400" y="29" font-family="{F}" font-size="11" fill="{C['dim']}" text-anchor="middle">bigmacfive@github ~ dashboard.sh</text>
 
-  <!-- ═══════════════════ UPPER SECTION ═══════════════════ -->
+  <!-- ═══════════════ UPPER: PET + RINGS + HEATMAP ═══════════════ -->
 
-  <!-- PIXEL PET (animated) -->
-  <g class="pet">
-    {pet}
-  </g>
-  <text x="88" y="142" font-family="'Courier New', monospace" font-size="8" fill="{C['green']}" text-anchor="middle" filter="url(#glow)">&#9670; LV.{stats['years']} &#9670;</text>
+  <!-- pixel pet (animated) -->
+  <g class="pet">{pet}</g>
+  <!-- sparkle particles -->
+  {sparkles}
+  <!-- pet label -->
+  <text x="88" y="140" font-family="{F}" font-size="8" fill="{C['green']}" text-anchor="middle" filter="url(#glow)">&#9670; LV.{stats['years']} &#9670;</text>
+  <!-- HP -->
+  <text x="30" y="158" font-family="{F}" font-size="7" fill="{C['green']}">HP</text>
+  <rect x="48" y="150" width="110" height="7" fill="#21262d" rx="3"/>
+  <rect x="48" y="150" width="{hp_w}" height="7" fill="url(#hpg)" rx="3">
+    <animate attributeName="opacity" values="0.85;1;0.85" dur="3s" repeatCount="indefinite"/>
+  </rect>
+  <!-- XP -->
+  <text x="30" y="170" font-family="{F}" font-size="7" fill="{C['accent']}">XP</text>
+  <rect x="48" y="162" width="110" height="7" fill="#21262d" rx="3"/>
+  <rect x="48" y="162" width="{xp_w}" height="7" fill="url(#xpg)" rx="3"/>
 
-  <!-- HP bar -->
-  <text x="30" y="161" font-family="'Courier New', monospace" font-size="8" fill="{C['green']}">HP</text>
-  <rect x="50" y="152" width="112" height="8" fill="#21262d" rx="3"/>
-  <rect x="50" y="152" width="{hp_w}" height="8" fill="url(#hpg)" rx="3" class="hp"/>
+  <!-- rings: commits / streak / followers -->
+  {ring1}
+  {ring2}
+  {ring3}
 
-  <!-- XP bar -->
-  <text x="30" y="177" font-family="'Courier New', monospace" font-size="8" fill="#58a6ff">XP</text>
-  <rect x="50" y="168" width="112" height="8" fill="#21262d" rx="3"/>
-  <rect x="50" y="168" width="{xp_w}" height="8" fill="url(#xpg)" rx="3"/>
+  <!-- stats labels under rings -->
+  <text x="220" y="150" text-anchor="middle" font-family="{F}" font-size="7" fill="{C['dim']}">stars {stats['stars']}</text>
+  <text x="310" y="150" text-anchor="middle" font-family="{F}" font-size="7" fill="{C['dim']}">repos {stats['repos']}</text>
+  <text x="400" y="150" text-anchor="middle" font-family="{F}" font-size="7" fill="{C['dim']}">joined {stats['years']}y</text>
 
-  <!-- STATS PANEL -->
-  <text x="195" y="58" font-family="'Courier New', monospace" font-size="10" fill="{C['green']}" filter="url(#glow)">$ neofetch</text>
-  <text x="195" y="80"  font-family="'Courier New', monospace" font-size="10" fill="{C['dim']}">  commits  <tspan fill="{C['txt']}">{commits:,}</tspan></text>
-  <text x="195" y="98"  font-family="'Courier New', monospace" font-size="10" fill="{C['dim']}">  streak   <tspan fill="{C['txt']}">{stats['streak']}d</tspan></text>
-  <text x="195" y="116" font-family="'Courier New', monospace" font-size="10" fill="{C['dim']}">  followers<tspan fill="{C['txt']}"> {stats['followers']}</tspan></text>
-  <text x="195" y="134" font-family="'Courier New', monospace" font-size="10" fill="{C['dim']}">  stars    <tspan fill="{C['txt']}"> {stats['stars']}</tspan></text>
-  <text x="195" y="152" font-family="'Courier New', monospace" font-size="10" fill="{C['dim']}">  repos    <tspan fill="{C['txt']}"> {stats['repos']}</tspan></text>
-  <text x="195" y="170" font-family="'Courier New', monospace" font-size="10" fill="{C['dim']}">  joined   <tspan fill="{C['txt']}"> {stats['years']}y ago</tspan></text>
-
-  <!-- vertical divider -->
-  <line x1="400" y1="46" x2="400" y2="190" stroke="{C['bdr']}" stroke-width="0.5"/>
+  <!-- divider -->
+  <line x1="450" y1="44" x2="450" y2="180" stroke="{C['bdr']}" stroke-width="0.5" opacity="0.5"/>
 
   <!-- CONTRIBUTION HEATMAP -->
-  <text x="420" y="58" font-family="'Courier New', monospace" font-size="10" fill="{C['green']}" filter="url(#glow)">$ contributions --graph</text>
+  <text x="470" y="54" font-family="{F}" font-size="9" fill="{C['green']}" filter="url(#glow2)">contributions</text>
   {heatmap}
-  <!-- heatmap legend -->
-  <text x="420" y="152" font-family="'Courier New', monospace" font-size="7" fill="{C['dim']}">less</text>
-  <rect x="446" y="143" width="8" height="8" fill="#161b22" rx="1"/>
-  <rect x="457" y="143" width="8" height="8" fill="#0e4429" rx="1"/>
-  <rect x="468" y="143" width="8" height="8" fill="#006d32" rx="1"/>
-  <rect x="479" y="143" width="8" height="8" fill="#26a641" rx="1"/>
-  <rect x="490" y="143" width="8" height="8" fill="#39d353" rx="1"/>
-  <text x="502" y="152" font-family="'Courier New', monospace" font-size="7" fill="{C['dim']}">more</text>
+  <!-- legend -->
+  <text x="470" y="145" font-family="{F}" font-size="6" fill="{C['dim']}">less</text>
+  <rect x="492" y="138" width="7" height="7" fill="#161b22" rx="1"/>
+  <rect x="501" y="138" width="7" height="7" fill="#0e4429" rx="1"/>
+  <rect x="510" y="138" width="7" height="7" fill="#006d32" rx="1"/>
+  <rect x="519" y="138" width="7" height="7" fill="#26a641" rx="1"/>
+  <rect x="528" y="138" width="7" height="7" fill="#39d353" rx="1"/>
+  <text x="539" y="145" font-family="{F}" font-size="6" fill="{C['dim']}">more</text>
 
-  <!-- ═══ DIVIDER ═══ -->
-  <line x1="30" y1="195" x2="770" y2="195" stroke="{C['bdr']}" stroke-width="0.5" stroke-dasharray="4,4"/>
+  <!-- ═══ HORIZONTAL DIVIDER ═══ -->
+  <line x1="28" y1="185" x2="772" y2="185" stroke="{C['bdr']}" stroke-width="0.5" stroke-dasharray="3,3"/>
 
-  <!-- ═══════════════════ COMMIT LOG ═══════════════════ -->
-  <text x="30" y="218" font-family="'Courier New', monospace" font-size="10" fill="{C['orange']}" filter="url(#glow)">$ git log --oneline -5</text>
-
-  <!-- blinking cursor -->
-  <rect x="232" y="208" width="7" height="12" fill="{C['green']}">
+  <!-- ═══════════════ COMMIT LOG ═══════════════ -->
+  <text x="28" y="203" font-family="{F}" font-size="10" fill="{C['orange']}" filter="url(#glow)">$ git log --oneline</text>
+  <!-- cursor -->
+  <rect x="200" y="193" width="7" height="12" fill="{C['green']}">
     <animate attributeName="opacity" values="1;0;1" dur="1s" repeatCount="indefinite"/>
   </rect>
+  {commit_log}
 
-  <!-- commit entries (staggered fade-in) -->
-  <g>
-    {commit_log}
-  </g>
+  <!-- ═══ HORIZONTAL DIVIDER ═══ -->
+  <line x1="28" y1="345" x2="772" y2="345" stroke="{C['bdr']}" stroke-width="0.5" stroke-dasharray="3,3"/>
 
-  <!-- ═══ DIVIDER ═══ -->
-  <line x1="30" y1="345" x2="770" y2="345" stroke="{C['bdr']}" stroke-width="0.5" stroke-dasharray="4,4"/>
-
-  <!-- ═══════════════════ LANGUAGES ═══════════════════ -->
-  <text x="30" y="340" font-family="'Courier New', monospace" font-size="10" fill="{C['green']}" filter="url(#glow)">$ wc -l --by-language</text>
+  <!-- ═══════════════ LANGUAGES ═══════════════ -->
+  <text x="28" y="360" font-family="{F}" font-size="10" fill="{C['green']}" filter="url(#glow)">$ tokei --sort code</text>
   {lang_bars}
 
   <!-- ═══ FOOTER ═══ -->
-  <line x1="14" y1="402" x2="786" y2="402" stroke="{C['bdr']}" stroke-width="0.5"/>
+  <line x1="12" y1="410" x2="788" y2="410" stroke="{C['bdr']}" stroke-width="0.4"/>
 
   <!-- tamagotchi buttons -->
-  <circle cx="330" cy="416" r="7" fill="{C['tbar']}" stroke="{C['bdr']}" stroke-width="1"/>
-  <text x="330" y="420" font-family="'Courier New', monospace" font-size="7" fill="{C['dim']}" text-anchor="middle">A</text>
-  <circle cx="400" cy="416" r="7" fill="{C['tbar']}" stroke="{C['bdr']}" stroke-width="1"/>
-  <text x="400" y="420" font-family="'Courier New', monospace" font-size="7" fill="{C['dim']}" text-anchor="middle">B</text>
-  <circle cx="470" cy="416" r="7" fill="{C['tbar']}" stroke="{C['bdr']}" stroke-width="1"/>
-  <text x="470" y="420" font-family="'Courier New', monospace" font-size="7" fill="{C['dim']}" text-anchor="middle">C</text>
+  <circle cx="345" cy="425" r="6" fill="{C['tbar']}" stroke="{C['bdr']}" stroke-width="1"/>
+  <text x="345" y="428" font-family="{F}" font-size="6" fill="{C['dim']}" text-anchor="middle">A</text>
+  <circle cx="400" cy="425" r="6" fill="{C['tbar']}" stroke="{C['bdr']}" stroke-width="1"/>
+  <text x="400" y="428" font-family="{F}" font-size="6" fill="{C['dim']}" text-anchor="middle">B</text>
+  <circle cx="455" cy="425" r="6" fill="{C['tbar']}" stroke="{C['bdr']}" stroke-width="1"/>
+  <text x="455" y="428" font-family="{F}" font-size="6" fill="{C['dim']}" text-anchor="middle">C</text>
 
-  <!-- scan line effect (CRT) -->
-  <rect width="{W}" height="2" fill="white" opacity="0.015" rx="0">
+  <!-- animated wave -->
+  {wave}
+
+  <!-- CRT scan line -->
+  <rect width="{W}" height="2" fill="white" opacity="0.012">
     <animateTransform attributeName="transform" type="translate" from="0 -2" to="0 {H}" dur="8s" repeatCount="indefinite"/>
   </rect>
 
   <!-- timestamp -->
-  <text x="770" y="420" font-family="'Courier New', monospace" font-size="7" fill="{C['bdr']}" text-anchor="end">{now}</text>
+  <text x="772" y="432" font-family="{F}" font-size="6" fill="{C['bdr']}" text-anchor="end">{now}</text>
 </svg>'''
 
 
@@ -383,7 +447,7 @@ def main():
     svg = generate_svg(stats, events)
     with open("profile.svg", "w", encoding="utf-8") as f:
         f.write(svg)
-    print("Generated profile.svg")
+    print(f"Generated profile.svg ({len(svg)} bytes)")
 
 
 if __name__ == "__main__":

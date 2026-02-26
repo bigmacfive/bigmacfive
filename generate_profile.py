@@ -16,7 +16,7 @@ from datetime import datetime, timezone
 # ═══════════════════════════════════════════════════════════════
 USERNAME = "bigmacfive"
 TOKEN = os.getenv("GITHUB_TOKEN", "")
-W, H = 850, 880
+W, H = 850, 920
 FONT = "'Press Start 2P', 'Courier New', monospace"
 random.seed(42)
 
@@ -74,34 +74,56 @@ C = {
 # PIXEL ART SPRITES
 # ═══════════════════════════════════════════════════════════════
 
-# Link (16×16, ALttP front-facing)
-# 0=transparent, 1=cap, 2=cap_hi, 3=hair, 4=skin, 5=eyes,
-# 6=tunic, 7=tunic_hi, 8=belt, 9=boots, 10=blush
+# ── LINK (18×22, ALttP front-facing, detailed) ──
+# 0=transparent  1=cap_outline  2=cap  3=cap_hi  4=cap_bright
+# 5=hair  6=hair_dark  7=skin  8=skin_shadow  9=eyes
+# 10=tunic  11=tunic_dark  12=tunic_hi  13=belt  14=buckle
+# 15=boots  16=boots_dark  17=ear/blush
 LINK = [
-    [0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0],
-    [0,0,0,0,0,1,2,2,2,2,1,0,0,0,0,0],
-    [0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0],
-    [0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0],
-    [0,0,0,3,3,1,1,1,1,1,1,3,3,0,0,0],
-    [0,0,3,3,4,4,4,4,4,4,4,4,3,3,0,0],
-    [0,0,3,4,4,5,4,4,4,4,5,4,4,3,0,0],
-    [0,0,0,4,4,4,4,4,4,4,4,4,4,0,0,0],
-    [0,0,0,0,4,4,10,4,4,10,4,4,0,0,0],
-    [0,0,0,0,0,6,6,6,6,6,6,0,0,0,0,0],
-    [0,0,0,0,6,7,6,6,6,6,7,6,0,0,0,0],
-    [0,0,0,6,6,6,8,8,8,8,6,6,6,0,0,0],
-    [0,0,0,6,6,6,6,6,6,6,6,6,6,0,0,0],
-    [0,0,0,0,0,6,6,0,0,6,6,0,0,0,0,0],
-    [0,0,0,0,0,4,4,0,0,4,4,0,0,0,0,0],
-    [0,0,0,0,9,9,9,0,0,9,9,9,0,0,0,0],
+    [0,0,0,0,0,0,0,0,2,2,2,0,0,0,0,0,0,0],     # cap tip
+    [0,0,0,0,0,0,0,2,3,4,3,2,0,0,0,0,0,0],     # cap top highlight
+    [0,0,0,0,0,0,2,3,3,3,3,3,2,0,0,0,0,0],     # cap dome
+    [0,0,0,0,0,1,2,2,3,3,3,2,2,1,0,0,0,0],     # cap body
+    [0,0,0,0,0,1,2,2,2,2,2,2,2,1,0,0,0,0],     # cap brim
+    [0,0,0,0,5,1,1,1,1,1,1,1,1,5,5,0,0,0],     # hair + cap front
+    [0,0,0,5,6,7,7,7,7,7,7,7,7,6,5,0,0,0],     # forehead + sideburns
+    [0,0,0,5,7,9,7,7,7,7,9,7,7,7,5,0,0,0],     # eyes
+    [0,0,0,17,7,7,7,7,8,7,7,7,7,17,0,0,0,0],   # nose + ears
+    [0,0,0,0,8,7,7,8,8,8,7,7,8,0,0,0,0,0],     # mouth + chin
+    [0,0,0,0,0,10,10,10,10,10,10,0,0,0,0,0,0,0],# collar
+    [0,0,0,0,10,12,10,10,10,10,12,10,0,0,0,0,0,0],# shoulders
+    [0,0,0,7,10,10,10,10,10,10,10,10,7,0,0,0,0,0],# tunic + arms
+    [0,0,0,7,10,10,10,10,10,10,10,10,7,0,0,0,0,0],# tunic + hands
+    [0,0,0,0,11,10,13,14,14,13,10,11,0,0,0,0,0,0],# belt + buckle
+    [0,0,0,0,11,10,10,10,10,10,10,11,0,0,0,0,0,0],# tunic skirt
+    [0,0,0,0,11,10,10,10,10,10,10,11,0,0,0,0,0,0],# tunic skirt
+    [0,0,0,0,0,10,10,0,0,10,10,0,0,0,0,0,0,0],   # tunic split
+    [0,0,0,0,0,7,7,0,0,7,7,0,0,0,0,0,0,0],       # legs (skin)
+    [0,0,0,0,0,7,7,0,0,7,7,0,0,0,0,0,0,0],       # legs
+    [0,0,0,0,16,15,15,0,0,15,15,16,0,0,0,0,0,0], # boots top
+    [0,0,0,0,16,15,15,15,15,15,15,16,0,0,0,0,0,0],# boots bottom
 ]
 LINK_COLORS = {
-    1: C["cap"], 2: C["cap_hi"], 3: C["hair"], 4: C["skin"],
-    5: C["eyes"], 6: C["tunic"], 7: C["tunic_hi"], 8: C["belt"],
-    9: C["boots"], 10: C["blush"],
+    1: "#085210",   # cap outline (darkest green)
+    2: "#1a8a1e",   # cap
+    3: "#28a838",   # cap mid
+    4: "#58d868",   # cap highlight (bright)
+    5: "#d8a828",   # hair gold
+    6: "#b08820",   # hair shadow
+    7: "#f0b878",   # skin
+    8: "#d09858",   # skin shadow
+    9: "#183818",   # eyes dark
+    10: "#28a038",  # tunic
+    11: "#186828",  # tunic dark
+    12: "#48c858",  # tunic highlight
+    13: "#886030",  # belt brown
+    14: "#d4ce46",  # belt buckle gold
+    15: "#705028",  # boots
+    16: "#3a2010",  # boots dark
+    17: "#e0a060",  # ear/blush
 }
 
-# Heart (7×7)
+# ── Heart (7×7) ──
 HEART = [
     [0,1,1,0,1,1,0],
     [1,2,1,1,1,2,1],
@@ -112,44 +134,83 @@ HEART = [
     [0,0,0,1,0,0,0],
 ]
 
-# Triforce (5×3)
+# ── Triforce (5×3) ──
 TRIFORCE = [
     [0,0,1,0,0],
     [0,1,1,1,0],
     [1,1,1,1,1],
 ]
 
-# Sword (5×14)
+# ── MASTER SWORD (9×22, iconic blue crossguard + gold gem) ──
+# 1=blade_edge  2=blade_center  3=blade_hi  4=guard_blue
+# 5=guard_light  6=gem_gold  7=grip_blue  8=grip_dark  9=pommel_gold
 SWORD = [
-    [0,0,1,0,0],
-    [0,0,1,0,0],
-    [0,0,1,0,0],
-    [0,0,1,0,0],
-    [0,0,1,0,0],
-    [0,0,1,0,0],
-    [0,1,1,1,0],
-    [0,1,1,1,0],
-    [1,1,2,1,1],
-    [0,0,2,0,0],
-    [0,0,2,0,0],
-    [0,0,2,0,0],
-    [0,0,3,0,0],
-    [0,0,3,0,0],
+    [0,0,0,0,3,0,0,0,0],   # blade tip
+    [0,0,0,2,3,2,0,0,0],   # blade narrow
+    [0,0,0,1,2,1,0,0,0],
+    [0,0,0,1,2,1,0,0,0],
+    [0,0,0,1,2,1,0,0,0],
+    [0,0,0,1,2,1,0,0,0],
+    [0,0,0,1,2,1,0,0,0],
+    [0,0,0,1,2,1,0,0,0],
+    [0,0,0,1,2,1,0,0,0],
+    [0,0,1,1,3,1,1,0,0],   # blade widens
+    [0,0,1,1,3,1,1,0,0],
+    [5,4,4,4,6,4,4,4,5],   # crossguard + gem (wide)
+    [0,5,4,4,6,4,4,5,0],   # crossguard lower
+    [0,0,0,7,8,7,0,0,0],   # grip start
+    [0,0,0,8,7,8,0,0,0],   # grip wrapped
+    [0,0,0,7,8,7,0,0,0],
+    [0,0,0,8,7,8,0,0,0],
+    [0,0,0,7,8,7,0,0,0],
+    [0,0,0,8,7,8,0,0,0],   # grip end
+    [0,0,0,9,9,9,0,0,0],   # pommel top
+    [0,0,0,9,6,9,0,0,0],   # pommel gem
+    [0,0,0,0,9,0,0,0,0],   # pommel tip
 ]
-SWORD_COLORS = {1: "#c0c8d8", 2: "#886030", 3: "#d4ce46"}
+SWORD_COLORS = {
+    1: "#a0b0c8",   # blade edge (steel)
+    2: "#c8d4e8",   # blade center (bright steel)
+    3: "#e8f0ff",   # blade highlight (white flash)
+    4: "#2850a8",   # crossguard blue
+    5: "#4878c8",   # crossguard light blue
+    6: "#d4ce46",   # gem gold
+    7: "#2040a0",   # grip blue
+    8: "#182868",   # grip dark blue
+    9: "#c0a030",   # pommel dark gold
+}
 
-# Shield (7×8)
+# ── HYLIAN SHIELD (12×16, blue + red bird + triforce) ──
+# 1=border  2=border_hi  3=blue  4=blue_light
+# 5=triforce  6=bird_red  7=bird_hi  8=blue_dark
 SHIELD = [
-    [0,1,1,1,1,1,0],
-    [1,2,2,2,2,2,1],
-    [1,2,3,3,3,2,1],
-    [1,2,3,4,3,2,1],
-    [1,2,3,4,3,2,1],
-    [1,2,3,3,3,2,1],
-    [1,2,2,2,2,2,1],
-    [0,1,1,1,1,1,0],
+    [0,0,0,1,2,1,1,2,1,0,0,0],     # top edge
+    [0,0,1,3,3,5,5,3,3,1,0,0],     # triforce row 1
+    [0,1,3,3,5,3,3,5,3,3,1,0],     # triforce row 2 (3 triangles)
+    [0,1,3,5,5,5,5,5,5,3,1,0],     # triforce base
+    [1,3,4,3,3,3,3,3,3,4,3,1],     # body top
+    [1,3,3,3,3,6,6,3,3,3,3,1],     # bird head
+    [1,3,3,3,6,7,7,6,3,3,3,1],     # bird face
+    [1,3,3,6,7,6,6,7,6,3,3,1],     # bird wings
+    [1,3,6,7,6,6,6,6,7,6,3,1],     # bird wings spread
+    [1,3,3,6,6,7,7,6,6,3,3,1],     # bird body
+    [1,3,3,3,6,6,6,6,3,3,3,1],     # bird tail
+    [1,8,3,3,3,6,6,3,3,3,8,1],     # lower body
+    [0,1,8,3,3,3,3,3,3,8,1,0],     # narrowing
+    [0,0,1,8,3,3,3,3,8,1,0,0],     # narrowing
+    [0,0,0,1,8,3,3,8,1,0,0,0],     # near bottom
+    [0,0,0,0,1,1,1,1,0,0,0,0],     # bottom point
 ]
-SHIELD_COLORS = {1: "#1a6b34", 2: "#28a038", 3: "#d03030", 4: "#d4ce46"}
+SHIELD_COLORS = {
+    1: "#8898b0",   # border silver
+    2: "#b0c0d8",   # border highlight
+    3: "#1a3880",   # body blue
+    4: "#2850a8",   # blue light
+    5: "#d4ce46",   # triforce gold
+    6: "#c03030",   # bird red
+    7: "#e85858",   # bird highlight
+    8: "#0e2050",   # blue dark (shadow)
+}
 
 # ═══════════════════════════════════════════════════════════════
 # LANGUAGE CONFIG
@@ -521,33 +582,38 @@ def svg_hud(stats):
     return "\n".join(parts)
 
 def svg_equipment(stats):
-    """Left panel: Link sprite + stats."""
-    px, py, pw, ph = 18, 64, 270, 300
+    """Left panel: Link sprite + Master Sword + Hylian Shield + stats."""
+    px, py, pw, ph = 18, 64, 270, 340
     parts = [svg_panel(px, py, pw, ph, "EQUIPMENT")]
 
-    # ── Link sprite (ps=6, 96×96, centered) ──
-    lx = px + (pw - 16 * 6) // 2
-    ly = py + 18
-    parts.append(svg_pixel_grid(LINK, LINK_COLORS, lx, ly, ps=6, css_class="float"))
+    # ── Link sprite (18×22 at ps=5 = 90×110px, centered) ──
+    link_ps = 5
+    link_w = 18 * link_ps
+    link_h = 22 * link_ps
+    lx = px + (pw - link_w) // 2
+    ly = py + 16
+    parts.append(svg_pixel_grid(LINK, LINK_COLORS, lx, ly, ps=link_ps, css_class="float"))
 
-    # ── Sword (left of Link, ps=4) ──
-    sx = lx - 32
-    sy = ly + 14
-    parts.append(svg_pixel_grid(SWORD, SWORD_COLORS, sx, sy, ps=4))
+    # ── Master Sword (9×22 at ps=3, left of Link) ──
+    sword_ps = 3
+    sx = lx - 9 * sword_ps - 8
+    sy = ly + 18
+    parts.append(svg_pixel_grid(SWORD, SWORD_COLORS, sx, sy, ps=sword_ps))
 
-    # ── Shield (right of Link, ps=4) ──
-    shx = lx + 16 * 6 + 10
-    shy = ly + 28
-    parts.append(svg_pixel_grid(SHIELD, SHIELD_COLORS, shx, shy, ps=4))
+    # ── Hylian Shield (12×16 at ps=3, right of Link) ──
+    shield_ps = 3
+    shx = lx + link_w + 8
+    shy = ly + 40
+    parts.append(svg_pixel_grid(SHIELD, SHIELD_COLORS, shx, shy, ps=shield_ps))
 
     # ── Level + name ──
-    cy = ly + 104
+    cy = ly + link_h + 8
     lvl = min(99, stats["commits"] // 100 + 1)
     parts.append(f'<text x="{px + pw//2}" y="{cy}" text-anchor="middle" font-size="10" fill="{C["gold_hi"]}">LV. {lvl}</text>')
-    parts.append(f'<text x="{px + pw//2}" y="{cy + 16}" text-anchor="middle" font-size="9" fill="{C["text"]}">{USERNAME.upper()}</text>')
+    parts.append(f'<text x="{px + pw//2}" y="{cy + 17}" text-anchor="middle" font-size="9" fill="{C["text"]}">{USERNAME.upper()}</text>')
 
     # ── Stats ──
-    sy = py + 160
+    sy = cy + 32
     stat_items = [
         ("ATK", stats["commits"], C["heart"]),
         ("DEF", stats["repos"], C["tunic"]),
@@ -557,11 +623,9 @@ def svg_equipment(stats):
     ]
 
     for i, (label, val, color) in enumerate(stat_items):
-        row_y = sy + i * 24
+        row_y = sy + i * 22
         parts.append(f'<text x="{px + 18}" y="{row_y}" font-size="9" fill="{C["text_dim"]}">{label}</text>')
-        # Dot leaders
         parts.append(f'<text x="{px + 60}" y="{row_y}" font-size="7" fill="{C["text_dark"]}" letter-spacing="3">{"·" * 12}</text>')
-        # Value
         val_str = f"{val:,}" if val >= 1000 else str(val)
         parts.append(f'<text x="{px + pw - 20}" y="{row_y}" text-anchor="end" font-size="9" fill="{color}">{val_str}</text>')
 
@@ -569,7 +633,7 @@ def svg_equipment(stats):
 
 def svg_dungeon_map(weeks):
     """Right panel: heatmap as dungeon map."""
-    px, py, pw, ph = 300, 64, 532, 300
+    px, py, pw, ph = 300, 64, 532, 340
     parts = [svg_panel(px, py, pw, ph, "DUNGEON MAP")]
 
     cell = 13
@@ -626,7 +690,7 @@ def svg_dungeon_map(weeks):
 
 def svg_items(langs):
     """Item grid: 6 language slots, ALttP inventory style."""
-    px, py, pw, ph = 18, 376, 814, 130
+    px, py, pw, ph = 18, 416, 814, 130
     parts = [svg_panel(px, py, pw, ph, "- I T E M S -")]
 
     num_slots = 6
@@ -681,7 +745,7 @@ def svg_items(langs):
 
 def svg_quest_log(events):
     """Dialog-box quest log."""
-    px, py, pw, ph = 18, 518, 814, 200
+    px, py, pw, ph = 18, 558, 814, 200
     parts = [svg_panel(px, py, pw, ph, "QUEST LOG")]
 
     if not events:
@@ -726,7 +790,7 @@ def svg_quest_log(events):
 
 def svg_party(total, ai_count, ai_breakdown):
     """Party bar: AI collaboration ratio."""
-    px, py, pw, ph = 18, 730, 814, 80
+    px, py, pw, ph = 18, 770, 814, 80
     parts = [svg_panel(px, py, pw, ph, "PARTY")]
 
     bar_x = px + 20

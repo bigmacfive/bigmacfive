@@ -892,6 +892,7 @@
 <rect x="710" y="188" width="13" height="13" rx="2" fill="#0d5030"/>
 <rect x="710" y="188" width="13" height="13" rx="2" fill="none" stroke="#4aba91" stroke-width="0.4" opacity="0.25"/>
 <rect x="726" y="92" width="13" height="13" rx="2" fill="#101820"/>
+<rect x="726" y="108" width="13" height="13" rx="2" fill="#101820"/>
 <text x="390" y="220" font-size="7" fill="#3a5838">SAFE</text>
 <rect x="428" y="211" width="13" height="13" rx="2" fill="#101820"/>
 <rect x="446" y="211" width="13" height="13" rx="2" fill="#0d5030"/>
@@ -1003,7 +1004,7 @@
 <text x="52" y="886" font-size="9" fill="#d4ce46">▶ GAME SAVED</text>
 <rect x="175" y="876" width="9" height="12" fill="#e8eef4" class="cursor"/>
 <text x="455" y="886" text-anchor="middle" font-size="8" fill="#6a9068">IT'S A SECRET TO EVERYBODY</text>
-<text x="826" y="886" text-anchor="end" font-size="7" fill="#3a5838">2026-03-01 03:17 UTC</text>
+<text x="826" y="886" text-anchor="end" font-size="7" fill="#3a5838">2026-03-02 02:47 UTC</text>
 <rect x="812" y="876" width="4" height="4" fill="#d4ce46"/>
 <rect x="808" y="880" width="4" height="4" fill="#d4ce46"/>
 <rect x="812" y="880" width="4" height="4" fill="#d4ce46"/>

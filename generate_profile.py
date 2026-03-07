@@ -1,325 +1,316 @@
 #!/usr/bin/env python3
-"""GitHub Profile Dashboard v10 — The Legend of Zelda: A Link to the Past
+"""Generate a clean, game-framed GitHub profile SVG."""
 
-Authentic ALttP game screen — large, readable, beautiful.
-- Bigger Link sprite (ps=6), larger fonts (8-14px)
-- Spacious layout with thick panel borders
-- CRT scanline overlay, gradient panel backgrounds
-- CSS-only animations (GitHub SVG compatible)
-"""
-
-import json, os, random, urllib.request, urllib.error
+import base64
+import json
+import os
+import random
+import urllib.request
 from datetime import datetime, timezone
+from html import escape
 
-# ═══════════════════════════════════════════════════════════════
-# CONFIG
-# ═══════════════════════════════════════════════════════════════
+
 USERNAME = "bigmacfive"
 TOKEN = os.getenv("GITHUB_TOKEN", "")
-W, H = 850, 920
-FONT = "'Press Start 2P', 'Courier New', monospace"
+W, H = 850, 900
+FONT = "'Pretendard', 'Segoe UI', Arial, sans-serif"
+FONT_PATH = os.path.join(
+    os.path.dirname(__file__),
+    "assets",
+    "Pretendard-Regular.subset.woff2",
+)
+DISPLAY_NAME = "Bigmacfive"
+PROFILE_TAGLINE = "Building clean products with code, systems, and taste."
+PROFILE_INTRO = [
+    "Focused on shipping, iteration, and long-term craft.",
+    "I care about clear interfaces, useful systems, and durable execution.",
+]
 random.seed(42)
 
-# ═══════════════════════════════════════════════════════════════
-# ALttP COLOR PALETTE
-# ═══════════════════════════════════════════════════════════════
+
 C = {
-    # Background & panels
-    "bg":        "#080810",
-    "panel":     "#0e1a24",
-    "panel_hi":  "#162030",
-    "panel_top": "#1a2840",
-    "border":    "#0d9263",
-    "border_hi": "#4aba91",
-    "border_lo": "#06553a",
-    "gold":      "#d4ce46",
-    "gold_hi":   "#f0ea80",
-    "gold_dark": "#8a7a20",
-    # HUD
-    "heart":     "#d03030",
-    "heart_hi":  "#f06868",
-    "heart_e":   "#281818",
-    "rupee":     "#40b8f0",
-    "key":       "#d4ce46",
-    # Text
-    "text":      "#e8eef4",
-    "text_dim":  "#6a9068",
-    "text_dark": "#3a5838",
-    "title":     "#4aba91",
-    "green":     "#38e850",
-    # Greens (heatmap)
-    "g0":        "#101820",
-    "g1":        "#0d5030",
-    "g2":        "#0d9263",
-    "g3":        "#38c878",
-    "g4":        "#80ff98",
-    # Link sprite
-    "cap":       "#1a8a1e",
-    "cap_hi":    "#38c848",
-    "hair":      "#e8b830",
-    "skin":      "#f0b878",
-    "eyes":      "#183018",
-    "tunic":     "#28a038",
-    "tunic_hi":  "#48c858",
-    "belt":      "#886030",
-    "boots":     "#604020",
-    # Misc
-    "magic":     "#4090ff",
-    "blush":     "#ff9080",
-    "white":     "#ffffff",
-    "cursor":    "#e8eef4",
+    "bg": "#07111a",
+    "bg_hi": "#102235",
+    "panel": "#0f1b2a",
+    "panel_hi": "#132337",
+    "panel_line": "#1f3850",
+    "border": "#215b67",
+    "border_hi": "#56c1a0",
+    "gold": "#d5bf74",
+    "gold_hi": "#f2df9e",
+    "text": "#f3f7fb",
+    "text_dim": "#b6c4d3",
+    "text_muted": "#6b8398",
+    "green": "#4cc28d",
+    "blue": "#65a8ff",
+    "red": "#ef7676",
+    "shadow": "#041019",
+    "g0": "#0f1722",
+    "g1": "#123a31",
+    "g2": "#1b6d58",
+    "g3": "#30a97b",
+    "g4": "#74ddb0",
 }
 
-# ═══════════════════════════════════════════════════════════════
-# PIXEL ART SPRITES
-# ═══════════════════════════════════════════════════════════════
 
-# ── LINK (18×22, ALttP front-facing, detailed) ──
-# 0=transparent  1=cap_outline  2=cap  3=cap_hi  4=cap_bright
-# 5=hair  6=hair_dark  7=skin  8=skin_shadow  9=eyes
-# 10=tunic  11=tunic_dark  12=tunic_hi  13=belt  14=buckle
-# 15=boots  16=boots_dark  17=ear/blush
 LINK = [
-    [0,0,0,0,0,0,0,0,2,2,2,0,0,0,0,0,0,0],     # cap tip
-    [0,0,0,0,0,0,0,2,3,4,3,2,0,0,0,0,0,0],     # cap top highlight
-    [0,0,0,0,0,0,2,3,3,3,3,3,2,0,0,0,0,0],     # cap dome
-    [0,0,0,0,0,1,2,2,3,3,3,2,2,1,0,0,0,0],     # cap body
-    [0,0,0,0,0,1,2,2,2,2,2,2,2,1,0,0,0,0],     # cap brim
-    [0,0,0,0,5,1,1,1,1,1,1,1,1,5,5,0,0,0],     # hair + cap front
-    [0,0,0,5,6,7,7,7,7,7,7,7,7,6,5,0,0,0],     # forehead + sideburns
-    [0,0,0,5,7,9,7,7,7,7,9,7,7,7,5,0,0,0],     # eyes
-    [0,0,0,17,7,7,7,7,8,7,7,7,7,17,0,0,0,0],   # nose + ears
-    [0,0,0,0,8,7,7,8,8,8,7,7,8,0,0,0,0,0],     # mouth + chin
-    [0,0,0,0,0,10,10,10,10,10,10,0,0,0,0,0,0,0],# collar
-    [0,0,0,0,10,12,10,10,10,10,12,10,0,0,0,0,0,0],# shoulders
-    [0,0,0,7,10,10,10,10,10,10,10,10,7,0,0,0,0,0],# tunic + arms
-    [0,0,0,7,10,10,10,10,10,10,10,10,7,0,0,0,0,0],# tunic + hands
-    [0,0,0,0,11,10,13,14,14,13,10,11,0,0,0,0,0,0],# belt + buckle
-    [0,0,0,0,11,10,10,10,10,10,10,11,0,0,0,0,0,0],# tunic skirt
-    [0,0,0,0,11,10,10,10,10,10,10,11,0,0,0,0,0,0],# tunic skirt
-    [0,0,0,0,0,10,10,0,0,10,10,0,0,0,0,0,0,0],   # tunic split
-    [0,0,0,0,0,7,7,0,0,7,7,0,0,0,0,0,0,0],       # legs (skin)
-    [0,0,0,0,0,7,7,0,0,7,7,0,0,0,0,0,0,0],       # legs
-    [0,0,0,0,16,15,15,0,0,15,15,16,0,0,0,0,0,0], # boots top
-    [0,0,0,0,16,15,15,15,15,15,15,16,0,0,0,0,0,0],# boots bottom
+    [0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 2, 3, 4, 3, 2, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 2, 3, 3, 3, 3, 3, 2, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 1, 2, 2, 3, 3, 3, 2, 2, 1, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 1, 2, 2, 2, 2, 2, 2, 2, 1, 0, 0, 0, 0],
+    [0, 0, 0, 0, 5, 1, 1, 1, 1, 1, 1, 1, 1, 5, 5, 0, 0, 0],
+    [0, 0, 0, 5, 6, 7, 7, 7, 7, 7, 7, 7, 7, 6, 5, 0, 0, 0],
+    [0, 0, 0, 5, 7, 9, 7, 7, 7, 7, 9, 7, 7, 7, 5, 0, 0, 0],
+    [0, 0, 0, 17, 7, 7, 7, 7, 8, 7, 7, 7, 7, 17, 0, 0, 0, 0],
+    [0, 0, 0, 0, 8, 7, 7, 8, 8, 8, 7, 7, 8, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 10, 10, 10, 10, 10, 10, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 10, 12, 10, 10, 10, 10, 12, 10, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 7, 10, 10, 10, 10, 10, 10, 10, 10, 7, 0, 0, 0, 0, 0],
+    [0, 0, 0, 7, 10, 10, 10, 10, 10, 10, 10, 10, 7, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 11, 10, 13, 14, 14, 13, 10, 11, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 11, 10, 10, 10, 10, 10, 10, 11, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 11, 10, 10, 10, 10, 10, 10, 11, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 10, 10, 0, 0, 10, 10, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 7, 7, 0, 0, 7, 7, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 7, 7, 0, 0, 7, 7, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 16, 15, 15, 0, 0, 15, 15, 16, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 16, 15, 15, 15, 15, 15, 15, 16, 0, 0, 0, 0, 0, 0],
 ]
+
 LINK_COLORS = {
-    1: "#085210",   # cap outline (darkest green)
-    2: "#1a8a1e",   # cap
-    3: "#28a838",   # cap mid
-    4: "#58d868",   # cap highlight (bright)
-    5: "#d8a828",   # hair gold
-    6: "#b08820",   # hair shadow
-    7: "#f0b878",   # skin
-    8: "#d09858",   # skin shadow
-    9: "#183818",   # eyes dark
-    10: "#28a038",  # tunic
-    11: "#186828",  # tunic dark
-    12: "#48c858",  # tunic highlight
-    13: "#886030",  # belt brown
-    14: "#d4ce46",  # belt buckle gold
-    15: "#705028",  # boots
-    16: "#3a2010",  # boots dark
-    17: "#e0a060",  # ear/blush
+    1: "#0b5515",
+    2: "#1f8f26",
+    3: "#2cb53e",
+    4: "#5fdc74",
+    5: "#d4aa2f",
+    6: "#ae8a27",
+    7: "#f0ba83",
+    8: "#d69d67",
+    9: "#17331a",
+    10: "#2ca142",
+    11: "#1f7332",
+    12: "#57cd6c",
+    13: "#8a6438",
+    14: "#e0ca62",
+    15: "#76522c",
+    16: "#42260f",
+    17: "#e1a06a",
 }
 
-# ── Heart (7×7) ──
 HEART = [
-    [0,1,1,0,1,1,0],
-    [1,2,1,1,1,2,1],
-    [1,1,1,1,1,1,1],
-    [1,1,1,1,1,1,1],
-    [0,1,1,1,1,1,0],
-    [0,0,1,1,1,0,0],
-    [0,0,0,1,0,0,0],
+    [0, 1, 1, 0, 1, 1, 0],
+    [1, 2, 1, 1, 1, 2, 1],
+    [1, 1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1, 1],
+    [0, 1, 1, 1, 1, 1, 0],
+    [0, 0, 1, 1, 1, 0, 0],
+    [0, 0, 0, 1, 0, 0, 0],
 ]
 
-# ── Triforce (5×3) ──
 TRIFORCE = [
-    [0,0,1,0,0],
-    [0,1,1,1,0],
-    [1,1,1,1,1],
+    [0, 0, 1, 0, 0],
+    [0, 1, 1, 1, 0],
+    [1, 1, 1, 1, 1],
 ]
 
-# ── MASTER SWORD (9×22, iconic blue crossguard + gold gem) ──
-# 1=blade_edge  2=blade_center  3=blade_hi  4=guard_blue
-# 5=guard_light  6=gem_gold  7=grip_blue  8=grip_dark  9=pommel_gold
-SWORD = [
-    [0,0,0,0,3,0,0,0,0],   # blade tip
-    [0,0,0,2,3,2,0,0,0],   # blade narrow
-    [0,0,0,1,2,1,0,0,0],
-    [0,0,0,1,2,1,0,0,0],
-    [0,0,0,1,2,1,0,0,0],
-    [0,0,0,1,2,1,0,0,0],
-    [0,0,0,1,2,1,0,0,0],
-    [0,0,0,1,2,1,0,0,0],
-    [0,0,0,1,2,1,0,0,0],
-    [0,0,1,1,3,1,1,0,0],   # blade widens
-    [0,0,1,1,3,1,1,0,0],
-    [5,4,4,4,6,4,4,4,5],   # crossguard + gem (wide)
-    [0,5,4,4,6,4,4,5,0],   # crossguard lower
-    [0,0,0,7,8,7,0,0,0],   # grip start
-    [0,0,0,8,7,8,0,0,0],   # grip wrapped
-    [0,0,0,7,8,7,0,0,0],
-    [0,0,0,8,7,8,0,0,0],
-    [0,0,0,7,8,7,0,0,0],
-    [0,0,0,8,7,8,0,0,0],   # grip end
-    [0,0,0,9,9,9,0,0,0],   # pommel top
-    [0,0,0,9,6,9,0,0,0],   # pommel gem
-    [0,0,0,0,9,0,0,0,0],   # pommel tip
-]
-SWORD_COLORS = {
-    1: "#a0b0c8",   # blade edge (steel)
-    2: "#c8d4e8",   # blade center (bright steel)
-    3: "#e8f0ff",   # blade highlight (white flash)
-    4: "#2850a8",   # crossguard blue
-    5: "#4878c8",   # crossguard light blue
-    6: "#d4ce46",   # gem gold
-    7: "#2040a0",   # grip blue
-    8: "#182868",   # grip dark blue
-    9: "#c0a030",   # pommel dark gold
-}
-
-# ── HYLIAN SHIELD (12×16, blue + red bird + triforce) ──
-# 1=border  2=border_hi  3=blue  4=blue_light
-# 5=triforce  6=bird_red  7=bird_hi  8=blue_dark
-SHIELD = [
-    [0,0,0,1,2,1,1,2,1,0,0,0],     # top edge
-    [0,0,1,3,3,5,5,3,3,1,0,0],     # triforce row 1
-    [0,1,3,3,5,3,3,5,3,3,1,0],     # triforce row 2 (3 triangles)
-    [0,1,3,5,5,5,5,5,5,3,1,0],     # triforce base
-    [1,3,4,3,3,3,3,3,3,4,3,1],     # body top
-    [1,3,3,3,3,6,6,3,3,3,3,1],     # bird head
-    [1,3,3,3,6,7,7,6,3,3,3,1],     # bird face
-    [1,3,3,6,7,6,6,7,6,3,3,1],     # bird wings
-    [1,3,6,7,6,6,6,6,7,6,3,1],     # bird wings spread
-    [1,3,3,6,6,7,7,6,6,3,3,1],     # bird body
-    [1,3,3,3,6,6,6,6,3,3,3,1],     # bird tail
-    [1,8,3,3,3,6,6,3,3,3,8,1],     # lower body
-    [0,1,8,3,3,3,3,3,3,8,1,0],     # narrowing
-    [0,0,1,8,3,3,3,3,8,1,0,0],     # narrowing
-    [0,0,0,1,8,3,3,8,1,0,0,0],     # near bottom
-    [0,0,0,0,1,1,1,1,0,0,0,0],     # bottom point
-]
-SHIELD_COLORS = {
-    1: "#8898b0",   # border silver
-    2: "#b0c0d8",   # border highlight
-    3: "#1a3880",   # body blue
-    4: "#2850a8",   # blue light
-    5: "#d4ce46",   # triforce gold
-    6: "#c03030",   # bird red
-    7: "#e85858",   # bird highlight
-    8: "#0e2050",   # blue dark (shadow)
-}
-
-# ═══════════════════════════════════════════════════════════════
-# LANGUAGE CONFIG
-# ═══════════════════════════════════════════════════════════════
 
 LANG_SHORT = {
-    "Python": "PY", "TypeScript": "TS", "JavaScript": "JS",
-    "Rust": "RST", "Go": "GO", "Shell": "SH",
-    "HTML": "HTML", "CSS": "CSS", "Java": "JAVA",
-    "C++": "C++", "C": "C", "Ruby": "RB",
-    "Swift": "SWF", "Kotlin": "KT", "Dart": "DRT",
-    "Lua": "LUA", "PHP": "PHP", "Scala": "SCL",
-    "Haskell": "HSK", "Elixir": "ELX", "Zig": "ZIG",
-    "Vue": "VUE", "Svelte": "SVT", "SCSS": "SCSS",
+    "Python": "PY",
+    "TypeScript": "TS",
+    "JavaScript": "JS",
+    "Rust": "RST",
+    "Go": "GO",
+    "Shell": "SH",
+    "HTML": "HTML",
+    "CSS": "CSS",
+    "Java": "JAVA",
+    "C++": "C++",
+    "C": "C",
+    "Ruby": "RB",
+    "Swift": "SWF",
+    "Kotlin": "KT",
+    "Dart": "DRT",
+    "Lua": "LUA",
+    "PHP": "PHP",
+    "Scala": "SCL",
+    "Haskell": "HSK",
+    "Elixir": "ELX",
+    "Zig": "ZIG",
+    "Vue": "VUE",
+    "Svelte": "SVT",
+    "SCSS": "SCSS",
 }
 
 LANG_COLORS = {
-    "Python": "#3572A5", "TypeScript": "#3178c6", "JavaScript": "#f1e05a",
-    "Rust": "#dea584", "Go": "#00ADD8", "Shell": "#89e051",
-    "HTML": "#e34c26", "CSS": "#563d7c", "Java": "#b07219",
-    "C++": "#f34b7d", "C": "#555555", "Ruby": "#701516",
-    "Swift": "#F05138", "Kotlin": "#A97BFF", "Dart": "#00B4AB",
-    "Lua": "#000080", "PHP": "#4F5D95", "Scala": "#c22d40",
-    "Haskell": "#5e5086", "Elixir": "#6e4a7e", "Zig": "#ec915c",
-    "Vue": "#41b883", "Svelte": "#ff3e00", "SCSS": "#c6538c",
+    "Python": "#3572A5",
+    "TypeScript": "#3178c6",
+    "JavaScript": "#f1e05a",
+    "Rust": "#dea584",
+    "Go": "#00ADD8",
+    "Shell": "#89e051",
+    "HTML": "#e34c26",
+    "CSS": "#563d7c",
+    "Java": "#b07219",
+    "C++": "#f34b7d",
+    "C": "#555555",
+    "Ruby": "#701516",
+    "Swift": "#F05138",
+    "Kotlin": "#A97BFF",
+    "Dart": "#00B4AB",
+    "Lua": "#000080",
+    "PHP": "#4F5D95",
+    "Scala": "#c22d40",
+    "Haskell": "#5e5086",
+    "Elixir": "#6e4a7e",
+    "Zig": "#ec915c",
+    "Vue": "#41b883",
+    "Svelte": "#ff3e00",
+    "SCSS": "#c6538c",
 }
 
-# AI collaboration patterns
+
 AI_PATTERNS = [
     r"(?i)co-?authored-?by:.*\b(claude|copilot|gpt|gemini|cursor|codeium|tabnine|amazon.?q)\b",
     r"(?i)\b(ai|llm|copilot|claude|gpt|cursor)\s*(assisted|generated|paired|helped)",
     r"(?i)🤖",
 ]
-AI_NAMES = {"claude": "NAVI", "copilot": "TATL", "gpt": "TAEL", "gemini": "MIDNA",
-            "cursor": "FI", "codeium": "EZLO", "tabnine": "CIELA"}
-AI_COLORS = {"NAVI": "#4090ff", "TATL": "#40b8f0", "TAEL": "#c070ff",
-             "MIDNA": "#38c878", "FI": "#d4ce46", "EZLO": "#0d9263", "CIELA": "#ff9080"}
+AI_NAMES = {
+    "claude": "Claude",
+    "copilot": "Copilot",
+    "gpt": "GPT",
+    "gemini": "Gemini",
+    "cursor": "Cursor",
+    "codeium": "Codeium",
+    "tabnine": "Tabnine",
+    "amazon q": "Amazon Q",
+    "amazonq": "Amazon Q",
+}
+AI_COLORS = {
+    "Claude": "#65a8ff",
+    "Copilot": "#50c878",
+    "GPT": "#bb86fc",
+    "Gemini": "#f4b75d",
+    "Cursor": "#d5bf74",
+    "Codeium": "#4db8ff",
+    "Tabnine": "#ff8d7a",
+    "Amazon Q": "#7ad9d0",
+}
 
-# ═══════════════════════════════════════════════════════════════
-# DATA FETCHING
-# ═══════════════════════════════════════════════════════════════
+
+def e(value):
+    return escape(str(value), quote=False)
+
+
+def fmt_number(value):
+    return f"{value:,}"
+
+
+def truncate(text, limit):
+    text = text or ""
+    return text if len(text) <= limit else text[: limit - 1] + "…"
+
+
+def embed_font_css():
+    if not os.path.exists(FONT_PATH):
+        return ""
+    with open(FONT_PATH, "rb") as f:
+        font_b64 = base64.b64encode(f.read()).decode("ascii")
+    return (
+        "@font-face {"
+        "font-family:'Pretendard';"
+        f"src:url(data:font/woff2;base64,{font_b64}) format('woff2');"
+        "font-style:normal;"
+        "font-weight:400;"
+        "}"
+    )
+
 
 def gql(query, variables=None):
-    body = json.dumps({"query": query, **({"variables": variables} if variables else {})}).encode()
+    body = json.dumps(
+        {"query": query, **({"variables": variables} if variables else {})}
+    ).encode()
     req = urllib.request.Request(
         "https://api.github.com/graphql",
         data=body,
-        headers={"Authorization": f"bearer {TOKEN}", "Content-Type": "application/json"},
+        headers={
+            "Authorization": f"bearer {TOKEN}",
+            "Content-Type": "application/json",
+        },
     )
     try:
         with urllib.request.urlopen(req, timeout=30) as r:
             return json.loads(r.read())
-    except Exception as e:
-        print(f"GraphQL error: {e}")
+    except Exception as err:
+        print(f"GraphQL error: {err}")
         return {}
 
+
 def fetch_stats():
-    q = """query($u:String!){
+    query = """query($u:String!){
       user(login:$u){
         repositories(ownerAffiliations:OWNER,first:100,orderBy:{field:STARGAZERS,direction:DESC}){
           totalCount
-          nodes{stargazerCount languages(first:5,orderBy:{field:SIZE,direction:DESC}){edges{size node{name}}}}
+          nodes{
+            stargazerCount
+            languages(first:5,orderBy:{field:SIZE,direction:DESC}){edges{size node{name}}}
+          }
         }
         followers{totalCount}
         contributionsCollection{
           totalCommitContributions
-          contributionCalendar{totalContributions weeks{contributionDays{contributionCount date}}}
+          contributionCalendar{
+            totalContributions
+            weeks{contributionDays{contributionCount date}}
+          }
         }
       }
     }"""
-    data = gql(q, {"u": USERNAME})
-    u = (data.get("data") or {}).get("user") or {}
-    repos_data = u.get("repositories") or {}
-    repos = repos_data.get("totalCount", 0)
+    data = gql(query, {"u": USERNAME})
+    user = (data.get("data") or {}).get("user") or {}
+    repos_data = user.get("repositories") or {}
     nodes = repos_data.get("nodes") or []
-    stars = sum(n.get("stargazerCount", 0) for n in nodes)
-    followers = (u.get("followers") or {}).get("totalCount", 0)
-    cc = u.get("contributionsCollection") or {}
-    commits = cc.get("totalCommitContributions", 0)
-    cal = (cc.get("contributionCalendar") or {})
-    total_contributions = cal.get("totalContributions", 0)
-    weeks = cal.get("weeks") or []
+
+    repos = repos_data.get("totalCount", 0)
+    stars = sum(node.get("stargazerCount", 0) for node in nodes)
+    followers = (user.get("followers") or {}).get("totalCount", 0)
+    contributions = user.get("contributionsCollection") or {}
+    commit_total = contributions.get("totalCommitContributions", 0)
+    calendar = contributions.get("contributionCalendar") or {}
+    total_contributions = calendar.get("totalContributions", 0)
+    weeks = calendar.get("weeks") or []
 
     streak = 0
-    for w in reversed(weeks):
-        for d in reversed(w.get("contributionDays") or []):
-            if d.get("contributionCount", 0) > 0:
+    for week in reversed(weeks):
+        for day in reversed(week.get("contributionDays") or []):
+            if day.get("contributionCount", 0) > 0:
                 streak += 1
-            else:
-                if streak > 0:
-                    break
+            elif streak > 0:
+                break
         else:
             continue
         break
 
     lang_map = {}
-    for n in nodes:
-        for e in (n.get("languages") or {}).get("edges") or []:
-            name = e["node"]["name"]
-            lang_map[name] = lang_map.get(name, 0) + e["size"]
-    total = sum(lang_map.values()) or 1
-    langs = sorted(lang_map.items(), key=lambda x: -x[1])[:6]
-    langs = [(name, size / total * 100) for name, size in langs]
+    for node in nodes:
+        for edge in (node.get("languages") or {}).get("edges") or []:
+            name = edge["node"]["name"]
+            lang_map[name] = lang_map.get(name, 0) + edge["size"]
+    total_size = sum(lang_map.values()) or 1
+    langs = sorted(lang_map.items(), key=lambda item: -item[1])[:6]
+    langs = [(name, size / total_size * 100) for name, size in langs]
 
     return {
-        "repos": repos, "stars": stars, "followers": followers,
-        "commits": commits, "streak": streak, "total": total_contributions,
-        "langs": langs, "weeks": weeks,
+        "repos": repos,
+        "stars": stars,
+        "followers": followers,
+        "commits": commit_total,
+        "streak": streak,
+        "total": total_contributions,
+        "langs": langs,
+        "weeks": weeks,
     }
+
 
 def fetch_events():
     url = f"https://api.github.com/users/{USERNAME}/events/public?per_page=30"
@@ -332,20 +323,27 @@ def fetch_events():
             events = json.loads(r.read())
     except Exception:
         return []
+
     result = []
-    import re
-    for ev in events:
-        if ev.get("type") != "PushEvent":
+    for event in events:
+        if event.get("type") != "PushEvent":
             continue
-        repo = (ev.get("repo") or {}).get("name", "").split("/")[-1]
-        for cm in (ev.get("payload") or {}).get("commits") or []:
-            sha = cm.get("sha", "")[:7]
-            msg = cm.get("message", "").split("\n")[0][:40]
-            ts = ev.get("created_at", "")
-            result.append({"sha": sha, "repo": repo, "msg": msg, "ts": ts})
+        repo = (event.get("repo") or {}).get("name", "").split("/")[-1]
+        for commit in (event.get("payload") or {}).get("commits") or []:
+            result.append(
+                {
+                    "sha": commit.get("sha", "")[:7],
+                    "repo": repo,
+                    "msg": commit.get("message", "").split("\n")[0],
+                    "ts": event.get("created_at", ""),
+                }
+            )
     return result[:5]
 
+
 def fetch_ai_ratio():
+    import re
+
     url = f"https://api.github.com/users/{USERNAME}/events/public?per_page=100"
     headers = {"Accept": "application/vnd.github.v3+json"}
     if TOKEN:
@@ -356,527 +354,517 @@ def fetch_ai_ratio():
             events = json.loads(r.read())
     except Exception:
         return 0, 0, {}
-    import re
+
     total = 0
     ai_count = 0
     ai_breakdown = {}
-    for ev in events:
-        if ev.get("type") != "PushEvent":
+
+    for event in events:
+        if event.get("type") != "PushEvent":
             continue
-        for cm in (ev.get("payload") or {}).get("commits") or []:
+        for commit in (event.get("payload") or {}).get("commits") or []:
             total += 1
-            msg = cm.get("message", "")
-            for pat in AI_PATTERNS:
-                m = re.search(pat, msg)
-                if m:
-                    ai_count += 1
-                    text = msg.lower()
-                    matched = False
-                    for keyword, name in AI_NAMES.items():
-                        if keyword in text:
-                            ai_breakdown[name] = ai_breakdown.get(name, 0) + 1
-                            matched = True
-                            break
-                    if not matched:
-                        ai_breakdown["NAVI"] = ai_breakdown.get("NAVI", 0) + 1
-                    break
+            msg = commit.get("message", "")
+            for pattern in AI_PATTERNS:
+                if not re.search(pattern, msg):
+                    continue
+                ai_count += 1
+                lowered = msg.lower()
+                matched = False
+                for keyword, label in AI_NAMES.items():
+                    if keyword in lowered:
+                        ai_breakdown[label] = ai_breakdown.get(label, 0) + 1
+                        matched = True
+                        break
+                if not matched:
+                    ai_breakdown["AI"] = ai_breakdown.get("AI", 0) + 1
+                break
+
     return total, ai_count, ai_breakdown
 
-def reltime(iso):
-    if not iso:
+
+def reltime(iso_text):
+    if not iso_text:
         return ""
     try:
-        dt = datetime.fromisoformat(iso.replace("Z", "+00:00"))
+        dt = datetime.fromisoformat(iso_text.replace("Z", "+00:00"))
         diff = datetime.now(timezone.utc) - dt
-        s = int(diff.total_seconds())
-        if s < 60:
+        seconds = int(diff.total_seconds())
+        if seconds < 60:
             return "now"
-        if s < 3600:
-            return f"{s // 60}m"
-        if s < 86400:
-            return f"{s // 3600}h"
-        d = s // 86400
-        if d == 1:
+        if seconds < 3600:
+            return f"{seconds // 60}m"
+        if seconds < 86400:
+            return f"{seconds // 3600}h"
+        days = seconds // 86400
+        if days == 1:
             return "1d"
-        if d < 30:
-            return f"{d}d"
-        return f"{d // 30}mo"
+        if days < 30:
+            return f"{days}d"
+        return f"{days // 30}mo"
     except Exception:
         return ""
 
-# ═══════════════════════════════════════════════════════════════
-# SVG PRIMITIVES
-# ═══════════════════════════════════════════════════════════════
 
 def svg_defs():
     return f"""<defs>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&amp;display=swap');
-    text {{ font-family: {FONT}; }}
-    @keyframes float {{ 0%,100% {{ transform: translateY(0); }} 50% {{ transform: translateY(-4px); }} }}
-    @keyframes cursor-blink {{ 0%,49% {{ opacity:1; }} 50%,100% {{ opacity:0; }} }}
-    @keyframes shimmer {{ 0% {{ opacity:0.2; }} 50% {{ opacity:0.7; }} 100% {{ opacity:0.2; }} }}
-    @keyframes glow {{ 0%,100% {{ opacity:0.4; }} 50% {{ opacity:0.8; }} }}
-    @keyframes pulse {{ 0%,100% {{ opacity:0.6; }} 50% {{ opacity:1; }} }}
-    .float {{ animation: float 3s ease-in-out infinite; }}
-    .cursor {{ animation: cursor-blink 1s step-end infinite; }}
-    .shimmer {{ animation: shimmer 4s ease-in-out infinite; }}
-    .glow {{ animation: glow 3s ease-in-out infinite; }}
-    .pulse {{ animation: pulse 2s ease-in-out infinite; }}
+    {embed_font_css()}
+    svg {{ shape-rendering: geometricPrecision; text-rendering: geometricPrecision; }}
+    text, tspan {{
+      font-family: {FONT};
+      letter-spacing: -0.05em;
+    }}
+    .float {{ animation: float 4s ease-in-out infinite; }}
+    @keyframes float {{
+      0%, 100% {{ transform: translateY(0); }}
+      50% {{ transform: translateY(-4px); }}
+    }}
   </style>
+  <linearGradient id="bgGrad" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0%" stop-color="{C['bg_hi']}" />
+    <stop offset="100%" stop-color="{C['bg']}" />
+  </linearGradient>
   <linearGradient id="panelGrad" x1="0" y1="0" x2="0" y2="1">
-    <stop offset="0%" stop-color="{C['panel_top']}" />
+    <stop offset="0%" stop-color="{C['panel_hi']}" />
     <stop offset="100%" stop-color="{C['panel']}" />
   </linearGradient>
-  <linearGradient id="barGrad" x1="0" y1="0" x2="1" y2="0">
-    <stop offset="0%" stop-color="{C['border']}" />
-    <stop offset="100%" stop-color="{C['border_hi']}" />
+  <linearGradient id="accentGrad" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0%" stop-color="{C['border_hi']}" />
+    <stop offset="100%" stop-color="{C['gold']}" />
   </linearGradient>
-  <filter id="glow-gold">
-    <feGaussianBlur stdDeviation="2" result="blur"/>
-    <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+  <filter id="panelShadow" x="-20%" y="-20%" width="140%" height="140%">
+    <feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="{C['shadow']}" flood-opacity="0.55" />
   </filter>
-  <pattern id="scanlines" patternUnits="userSpaceOnUse" width="2" height="2">
-    <rect width="2" height="1" fill="black" opacity="0.06"/>
-  </pattern>
+  <filter id="softBlur" x="-50%" y="-50%" width="200%" height="200%">
+    <feGaussianBlur stdDeviation="50" />
+  </filter>
 </defs>"""
 
+
 def svg_pixel_grid(matrix, colors, x, y, ps=4, css_class=""):
-    rects = []
-    cls = f' class="{css_class}"' if css_class else ""
+    parts = []
     if css_class:
-        rects.append(f'<g{cls}>')
-    for r, row in enumerate(matrix):
-        for c, val in enumerate(row):
-            if val and val in colors:
-                px, py_ = x + c * ps, y + r * ps
-                rects.append(f'<rect x="{px}" y="{py_}" width="{ps}" height="{ps}" fill="{colors[val]}"/>')
+        parts.append(f'<g class="{css_class}">')
+    for row_index, row in enumerate(matrix):
+        for col_index, value in enumerate(row):
+            if value and value in colors:
+                px = x + col_index * ps
+                py = y + row_index * ps
+                parts.append(
+                    f'<rect x="{px}" y="{py}" width="{ps}" height="{ps}" fill="{colors[value]}"/>'
+                )
     if css_class:
-        rects.append('</g>')
-    return "\n".join(rects)
+        parts.append("</g>")
+    return "\n".join(parts)
 
-def svg_pixel_heart(x, y, ps=4, filled=True):
-    color = C["heart"] if filled else C["heart_e"]
-    hi = C["heart_hi"] if filled else C["heart_e"]
-    rects = []
-    for r, row in enumerate(HEART):
-        for c, val in enumerate(row):
-            if val:
-                px, py_ = x + c * ps, y + r * ps
-                fill = hi if filled and val == 2 else color
-                if not filled:
-                    fill = C["heart_e"]
-                rects.append(f'<rect x="{px}" y="{py_}" width="{ps}" height="{ps}" fill="{fill}"/>')
-    return "\n".join(rects)
 
-def svg_rupee(x, y, size=14):
-    """Rupee gem icon."""
-    s = size
-    hw = s * 0.4
-    return f"""<polygon points="{x+hw},{y} {x+s*0.8},{y+s*0.3} {x+s*0.8},{y+s*0.7} {x+hw},{y+s} {x},{y+s*0.7} {x},{y+s*0.3}" fill="{C['rupee']}" opacity="0.9"/>
-<polygon points="{x+hw},{y} {x+hw},{y+s} {x+s*0.8},{y+s*0.7} {x+s*0.8},{y+s*0.3}" fill="{C['rupee']}" opacity="0.6"/>"""
+def svg_pixel_heart(x, y, ps=3, filled=True):
+    fill = C["red"] if filled else C["panel_line"]
+    hi = "#ffc0c0" if filled else C["panel_line"]
+    parts = []
+    for row_index, row in enumerate(HEART):
+        for col_index, value in enumerate(row):
+            if not value:
+                continue
+            px = x + col_index * ps
+            py = y + row_index * ps
+            color = hi if value == 2 else fill
+            parts.append(
+                f'<rect x="{px}" y="{py}" width="{ps}" height="{ps}" fill="{color}"/>'
+            )
+    return "\n".join(parts)
 
-def svg_key_icon(x, y, size=16):
-    """Key icon."""
-    return f"""<circle cx="{x+5}" cy="{y+5}" r="4.5" fill="none" stroke="{C['key']}" stroke-width="2"/>
-<line x1="{x+9}" y1="{y+5}" x2="{x+size}" y2="{y+5}" stroke="{C['key']}" stroke-width="2"/>
-<line x1="{x+14}" y1="{y+5}" x2="{x+14}" y2="{y+9}" stroke="{C['key']}" stroke-width="2"/>"""
 
-def svg_corner(x, y, corner="tl", size=10):
-    """Gold L-shaped corner ornament."""
-    g = C["gold"]
-    s = size
-    if corner == "tl":
-        return f'<path d="M{x},{y+s} L{x},{y} L{x+s},{y}" fill="none" stroke="{g}" stroke-width="2.5"/><rect x="{x-1}" y="{y-1}" width="4" height="4" fill="{g}" rx="1"/>'
-    elif corner == "tr":
-        return f'<path d="M{x-s},{y} L{x},{y} L{x},{y+s}" fill="none" stroke="{g}" stroke-width="2.5"/><rect x="{x-2}" y="{y-1}" width="4" height="4" fill="{g}" rx="1"/>'
-    elif corner == "bl":
-        return f'<path d="M{x},{y-s} L{x},{y} L{x+s},{y}" fill="none" stroke="{g}" stroke-width="2.5"/><rect x="{x-1}" y="{y-2}" width="4" height="4" fill="{g}" rx="1"/>'
-    elif corner == "br":
-        return f'<path d="M{x-s},{y} L{x},{y} L{x},{y-s}" fill="none" stroke="{g}" stroke-width="2.5"/><rect x="{x-2}" y="{y-2}" width="4" height="4" fill="{g}" rx="1"/>'
-    return ""
+def svg_card(x, y, w, h):
+    return "\n".join(
+        [
+            f'<g filter="url(#panelShadow)">',
+            f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="18" fill="url(#panelGrad)"/>',
+            "</g>",
+            f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="18" fill="none" stroke="{C["panel_line"]}" stroke-width="1.2"/>',
+            f'<rect x="{x+1.5}" y="{y+1.5}" width="{w-3}" height="{h-3}" rx="16.5" fill="none" stroke="{C["border"]}" stroke-width="1"/>',
+            f'<rect x="{x+10}" y="{y+10}" width="{w-20}" height="{h-20}" rx="12" fill="none" stroke="{C["border_hi"]}" stroke-width="0.5" opacity="0.18"/>',
+        ]
+    )
 
-def svg_panel(x, y, w, h, title=""):
-    """ALttP panel: gradient bg, thick green border, gold corners, inset title."""
+
+def svg_panel(x, y, w, h, title, kicker):
+    parts = [svg_card(x, y, w, h)]
+    parts.append(
+        f'<text x="{x+20}" y="{y+22}" font-size="9" fill="{C["text_muted"]}">{e(kicker)}</text>'
+    )
+    parts.append(
+        f'<text x="{x+20}" y="{y+40}" font-size="14" font-weight="600" fill="{C["text"]}">{e(title)}</text>'
+    )
+    parts.append(
+        f'<line x1="{x+20}" y1="{y+54}" x2="{x+w-20}" y2="{y+54}" stroke="url(#accentGrad)" stroke-width="1"/>'
+    )
+    return "\n".join(parts)
+
+
+def svg_metric_card(x, y, w, h, label, value, accent):
     parts = [
-        # Gradient background
-        f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="3" fill="url(#panelGrad)"/>',
-        # Outer border (thick)
-        f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="3" fill="none" stroke="{C["border_lo"]}" stroke-width="3"/>',
-        # Mid border
-        f'<rect x="{x+1.5}" y="{y+1.5}" width="{w-3}" height="{h-3}" rx="2" fill="none" stroke="{C["border"]}" stroke-width="1.5"/>',
-        # Inner highlight (top edge glow)
-        f'<rect x="{x+3}" y="{y+3}" width="{w-6}" height="{h-6}" rx="1" fill="none" stroke="{C["border_hi"]}" stroke-width="0.5" opacity="0.25"/>',
-        # Gold corners
-        svg_corner(x+2, y+2, "tl"),
-        svg_corner(x+w-2, y+2, "tr"),
-        svg_corner(x+2, y+h-2, "bl"),
-        svg_corner(x+w-2, y+h-2, "br"),
+        f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="12" fill="{C["bg"]}" opacity="0.55"/>',
+        f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="12" fill="none" stroke="{accent}" stroke-width="1"/>',
+        f'<text x="{x+14}" y="{y+16}" font-size="9" fill="{C["text_muted"]}">{e(label)}</text>',
+        f'<text x="{x+14}" y="{y+34}" font-size="16" font-weight="600" fill="{accent}">{e(value)}</text>',
     ]
-    if title:
-        tx = x + 18
-        tw = len(title) * 8 + 16
-        parts.append(f'<rect x="{tx-6}" y="{y-7}" width="{tw}" height="14" rx="2" fill="{C["bg"]}"/>')
-        parts.append(f'<text x="{tx}" y="{y+4}" font-size="9" fill="{C["gold"]}" letter-spacing="1">{title}</text>')
     return "\n".join(parts)
 
-def svg_outer_border():
-    """Double border around the entire card."""
-    return f"""<rect x="0" y="0" width="{W}" height="{H}" rx="6" fill="{C['bg']}"/>
-<rect x="3" y="3" width="{W-6}" height="{H-6}" rx="4" fill="none" stroke="{C['border_lo']}" stroke-width="3"/>
-<rect x="6" y="6" width="{W-12}" height="{H-12}" rx="3" fill="none" stroke="{C['border']}" stroke-width="1.5"/>
-<rect x="9" y="9" width="{W-18}" height="{H-18}" rx="2" fill="none" stroke="{C['border_hi']}" stroke-width="0.5" opacity="0.3"/>
-{svg_corner(4, 4, "tl", 14)}
-{svg_corner(W-4, 4, "tr", 14)}
-{svg_corner(4, H-4, "bl", 14)}
-{svg_corner(W-4, H-4, "br", 14)}"""
 
-def svg_scanlines():
-    """CRT scanline overlay."""
-    return f'<rect x="0" y="0" width="{W}" height="{H}" fill="url(#scanlines)" rx="6"/>'
+def svg_background():
+    return "\n".join(
+        [
+            f'<rect x="0" y="0" width="{W}" height="{H}" rx="28" fill="url(#bgGrad)"/>',
+            f'<circle cx="120" cy="90" r="140" fill="{C["border_hi"]}" opacity="0.08" filter="url(#softBlur)"/>',
+            f'<circle cx="760" cy="180" r="180" fill="{C["gold_hi"]}" opacity="0.06" filter="url(#softBlur)"/>',
+            f'<circle cx="700" cy="760" r="160" fill="{C["blue"]}" opacity="0.05" filter="url(#softBlur)"/>',
+            f'<rect x="10" y="10" width="{W-20}" height="{H-20}" rx="22" fill="none" stroke="{C["panel_line"]}" stroke-width="1.4"/>',
+            f'<rect x="18" y="18" width="{W-36}" height="{H-36}" rx="18" fill="none" stroke="{C["border"]}" stroke-width="0.9" opacity="0.8"/>',
+        ]
+    )
 
-def svg_sparkles():
-    """Subtle gold sparkle particles."""
-    parts = []
-    for _ in range(15):
-        sx = random.randint(30, W - 30)
-        sy = random.randint(60, H - 60)
-        size = random.choice([1.5, 2, 2.5])
-        delay = random.uniform(0, 6)
-        parts.append(f'<circle cx="{sx}" cy="{sy}" r="{size}" fill="{C["gold"]}" opacity="0.12" class="shimmer" style="animation-delay:{delay:.1f}s"/>')
+
+def svg_header(stats):
+    px, py, pw, ph = 18, 18, 814, 126
+    right_x = px + 534
+    card_w = 116
+    card_h = 40
+    level = min(99, max(1, stats["commits"] // 100 + 1))
+
+    parts = [svg_card(px, py, pw, ph)]
+    parts.append(
+        f'<text x="{px+24}" y="{py+24}" font-size="10" fill="{C["text_muted"]}">GitHub profile</text>'
+    )
+    parts.append(
+        f'<text x="{px+24}" y="{py+50}" font-size="30" font-weight="700" fill="{C["text"]}">{e(DISPLAY_NAME)}</text>'
+    )
+    parts.append(
+        f'<text x="{px+24}" y="{py+70}" font-size="11" fill="{C["gold"]}">@{e(USERNAME)} · Level {level}</text>'
+    )
+    parts.append(
+        f'<text x="{px+24}" y="{py+92}" font-size="13" font-weight="600" fill="{C["border_hi"]}">{e(PROFILE_TAGLINE)}</text>'
+    )
+    parts.append(
+        f'<text x="{px+24}" y="{py+110}" font-size="11" fill="{C["text_dim"]}">{e(PROFILE_INTRO[0])}</text>'
+    )
+    parts.append(
+        f'<text x="{px+24}" y="{py+126}" font-size="11" fill="{C["text_dim"]}">{e(PROFILE_INTRO[1])}</text>'
+    )
+
+    cards = [
+        ("Contributions", fmt_number(stats["total"]), C["border_hi"]),
+        ("Streak", f'{stats["streak"]}d', C["gold"]),
+        ("Stars", fmt_number(stats["stars"]), C["blue"]),
+        ("Repos", str(stats["repos"]), C["green"]),
+    ]
+    for index, (label, value, accent) in enumerate(cards):
+        row = index // 2
+        col = index % 2
+        cx = right_x + col * (card_w + 12)
+        cy = py + 20 + row * (card_h + 10)
+        parts.append(svg_metric_card(cx, cy, card_w, card_h, label, value, accent))
+
+    parts.append(
+        f'<text x="{right_x}" y="{py+118}" font-size="10" fill="{C["text_muted"]}">Updated daily from public GitHub activity.</text>'
+    )
     return "\n".join(parts)
 
-# ═══════════════════════════════════════════════════════════════
-# SVG PANELS
-# ═══════════════════════════════════════════════════════════════
 
-def svg_hud(stats):
-    """Top HUD: hearts, title, rupee/key counters."""
-    parts = []
-    hy = 20
-
-    # ── Hearts (5 hearts, ps=4 → 28×28 each) ──
-    num_hearts = min(5, max(1, stats["streak"] // 7 + (1 if stats["streak"] > 0 else 0)))
-    for i in range(5):
-        filled = i < num_hearts
-        parts.append(svg_pixel_heart(20 + i * 34, hy, ps=4, filled=filled))
-
-    # ── Title (centered, large) ──
-    parts.append(f'<text x="{W//2}" y="{hy + 14}" text-anchor="middle" font-size="13" fill="{C["title"]}" letter-spacing="3" filter="url(#glow-gold)">BIGMACFIVE</text>')
-
-    # ── Rupee counter (stars) ──
-    rx = W - 155
-    parts.append(svg_rupee(rx, hy + 1, size=16))
-    parts.append(f'<text x="{rx + 20}" y="{hy + 14}" font-size="10" fill="{C["rupee"]}">{stats["stars"]:,}</text>')
-
-    # ── Key counter (repos) ──
-    kx = W - 72
-    parts.append(svg_key_icon(kx, hy + 1, size=18))
-    parts.append(f'<text x="{kx + 22}" y="{hy + 14}" font-size="10" fill="{C["key"]}">{stats["repos"]}</text>')
-
-    # ── Separator ──
-    parts.append(f'<line x1="14" y1="54" x2="{W-14}" y2="54" stroke="{C["border"]}" stroke-width="1.5" opacity="0.5"/>')
-    # Glow on separator
-    parts.append(f'<line x1="14" y1="54" x2="{W-14}" y2="54" stroke="{C["border_hi"]}" stroke-width="0.5" opacity="0.2"/>')
-
-    return "\n".join(parts)
-
-def svg_equipment(stats):
-    """Left panel: Link sprite + Master Sword + Hylian Shield + stats."""
-    px, py, pw, ph = 18, 64, 270, 340
-    parts = [svg_panel(px, py, pw, ph, "EQUIPMENT")]
-
-    # ── Link sprite (18×22 at ps=5 = 90×110px, centered) ──
-    link_ps = 5
+def svg_profile(stats):
+    px, py, pw, ph = 18, 160, 262, 258
+    showcase_x = px + 20
+    showcase_y = py + 72
+    showcase_w = 94
+    showcase_h = 122
+    link_ps = 4
     link_w = 18 * link_ps
     link_h = 22 * link_ps
-    lx = px + (pw - link_w) // 2
-    ly = py + 16
-    parts.append(svg_pixel_grid(LINK, LINK_COLORS, lx, ly, ps=link_ps, css_class="float"))
-
-    # ── Master Sword (9×22 at ps=3, left of Link) ──
-    sword_ps = 3
-    sx = lx - 9 * sword_ps - 8
-    sy = ly + 18
-    parts.append(svg_pixel_grid(SWORD, SWORD_COLORS, sx, sy, ps=sword_ps))
-
-    # ── Hylian Shield (12×16 at ps=3, right of Link) ──
-    shield_ps = 3
-    shx = lx + link_w + 8
-    shy = ly + 40
-    parts.append(svg_pixel_grid(SHIELD, SHIELD_COLORS, shx, shy, ps=shield_ps))
-
-    # ── Level + name ──
-    cy = ly + link_h + 8
-    lvl = min(99, stats["commits"] // 100 + 1)
-    parts.append(f'<text x="{px + pw//2}" y="{cy}" text-anchor="middle" font-size="10" fill="{C["gold_hi"]}">LV. {lvl}</text>')
-    parts.append(f'<text x="{px + pw//2}" y="{cy + 17}" text-anchor="middle" font-size="9" fill="{C["text"]}">{USERNAME.upper()}</text>')
-
-    # ── Stats ──
-    sy = cy + 32
-    stat_items = [
-        ("ATK", stats["commits"], C["heart"]),
-        ("DEF", stats["repos"], C["tunic"]),
-        ("STR", stats["streak"], C["green"]),
-        ("LUK", stats["stars"], C["gold"]),
-        ("WIS", stats["followers"], C["magic"]),
+    link_x = showcase_x + (showcase_w - link_w) // 2
+    link_y = showcase_y + 10
+    streak_hearts = min(5, max(1, stats["streak"] // 7 + (1 if stats["streak"] else 0)))
+    facts_x = px + 134
+    facts = [
+        ("Followers", fmt_number(stats["followers"])),
+        ("Commits", fmt_number(stats["commits"])),
+        ("Languages", str(len(stats["langs"]))),
+        ("Current streak", f'{stats["streak"]} days'),
     ]
 
-    for i, (label, val, color) in enumerate(stat_items):
-        row_y = sy + i * 22
-        parts.append(f'<text x="{px + 18}" y="{row_y}" font-size="9" fill="{C["text_dim"]}">{label}</text>')
-        parts.append(f'<text x="{px + 60}" y="{row_y}" font-size="7" fill="{C["text_dark"]}" letter-spacing="3">{"·" * 12}</text>')
-        val_str = f"{val:,}" if val >= 1000 else str(val)
-        parts.append(f'<text x="{px + pw - 20}" y="{row_y}" text-anchor="end" font-size="9" fill="{color}">{val_str}</text>')
+    parts = [svg_panel(px, py, pw, ph, "Profile", "About")]
+    parts.extend(
+        [
+            f'<rect x="{showcase_x}" y="{showcase_y}" width="{showcase_w}" height="{showcase_h}" rx="14" fill="{C["bg"]}" opacity="0.6"/>',
+            f'<rect x="{showcase_x}" y="{showcase_y}" width="{showcase_w}" height="{showcase_h}" rx="14" fill="none" stroke="{C["panel_line"]}" stroke-width="1"/>',
+            svg_pixel_grid(LINK, LINK_COLORS, link_x, link_y, ps=link_ps, css_class="float"),
+            f'<text x="{showcase_x+16}" y="{showcase_y+112}" font-size="9" fill="{C["text_muted"]}">Current streak</text>',
+        ]
+    )
+    for index in range(5):
+        parts.append(
+            svg_pixel_heart(showcase_x + 14 + index * 15, showcase_y + 124, ps=2, filled=index < streak_hearts)
+        )
 
+    parts.append(
+        f'<text x="{facts_x}" y="{py+80}" font-size="10" fill="{C["gold"]}">@{e(USERNAME)}</text>'
+    )
+    parts.append(
+        f'<text x="{facts_x}" y="{py+102}" font-size="11" fill="{C["text_dim"]}">Focused on product quality, speed, and long-term maintainability.</text>'
+    )
+
+    start_y = py + 132
+    for index, (label, value) in enumerate(facts):
+        row_y = start_y + index * 28
+        parts.append(
+            f'<text x="{facts_x}" y="{row_y}" font-size="9" fill="{C["text_muted"]}">{e(label)}</text>'
+        )
+        parts.append(
+            f'<text x="{px+pw-20}" y="{row_y}" text-anchor="end" font-size="12" font-weight="600" fill="{C["text"]}">{e(value)}</text>'
+        )
+        if index < len(facts) - 1:
+            parts.append(
+                f'<line x1="{facts_x}" y1="{row_y+12}" x2="{px+pw-20}" y2="{row_y+12}" stroke="{C["panel_line"]}" stroke-width="1"/>'
+            )
     return "\n".join(parts)
 
-def svg_dungeon_map(weeks):
-    """Right panel: heatmap as dungeon map."""
-    px, py, pw, ph = 300, 64, 532, 340
-    parts = [svg_panel(px, py, pw, ph, "DUNGEON MAP")]
 
-    cell = 13
-    gap = 3
+def svg_activity(stats):
+    px, py, pw, ph = 296, 160, 536, 258
+    display_weeks = stats["weeks"][-24:] if len(stats["weeks"]) >= 24 else stats["weeks"]
+    cell = 14
+    gap = 4
     step = cell + gap
-    display_weeks = weeks[-22:] if len(weeks) >= 22 else weeks
-    grid_w = len(display_weeks) * step
-    grid_h = 7 * step
-    ox = px + (pw - grid_w) // 2
-    oy = py + 28
-
-    # Day labels
-    days = ["S", "M", "T", "W", "T", "F", "S"]
-    for i in range(7):
-        if i % 2 == 1:
-            parts.append(f'<text x="{ox - 16}" y="{oy + i * step + 10}" font-size="7" fill="{C["text_dark"]}">{days[i]}</text>')
-
+    ox = px + 56
+    oy = py + 92
     levels = [C["g0"], C["g1"], C["g2"], C["g3"], C["g4"]]
+    month_names = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+    total_weeks_width = len(display_weeks) * step
+    grid_x = ox + max(0, (pw - 80 - total_weeks_width) // 2)
+    legend_x = px + pw - 146
+    legend_y = py + ph - 24
 
-    for wi, w in enumerate(display_weeks):
-        for di, d in enumerate(w.get("contributionDays") or []):
-            cnt = d.get("contributionCount", 0)
-            lvl = 0 if cnt == 0 else (1 if cnt <= 2 else (2 if cnt <= 5 else (3 if cnt <= 9 else 4)))
-            cx = ox + wi * step
-            cy = oy + di * step
-            parts.append(f'<rect x="{cx}" y="{cy}" width="{cell}" height="{cell}" rx="2" fill="{levels[lvl]}"/>')
-            if lvl > 0:
-                parts.append(f'<rect x="{cx}" y="{cy}" width="{cell}" height="{cell}" rx="2" fill="none" stroke="{C["border_hi"]}" stroke-width="0.4" opacity="0.25"/>')
+    parts = [svg_panel(px, py, pw, ph, "Activity", "Contribution heatmap")]
+    parts.append(
+        f'<text x="{px+20}" y="{py+74}" font-size="10" fill="{C["text_muted"]}">This year</text>'
+    )
+    parts.append(
+        f'<text x="{px+86}" y="{py+74}" font-size="12" font-weight="600" fill="{C["border_hi"]}">{fmt_number(stats["total"])} contributions</text>'
+    )
+    parts.append(
+        f'<text x="{px+pw-20}" y="{py+74}" text-anchor="end" font-size="10" fill="{C["text_muted"]}">Latest 24 weeks</text>'
+    )
 
-    # Legend
-    ly = oy + grid_h + 16
-    parts.append(f'<text x="{ox}" y="{ly}" font-size="7" fill="{C["text_dark"]}">SAFE</text>')
-    for i, lv in enumerate(levels):
-        lx = ox + 38 + i * 18
-        parts.append(f'<rect x="{lx}" y="{ly - 9}" width="13" height="13" rx="2" fill="{lv}"/>')
-    parts.append(f'<text x="{ox + 38 + 5 * 18 + 2}" y="{ly}" font-size="7" fill="{C["text_dark"]}">DUNGEON</text>')
+    for label, row in [("Mon", 1), ("Wed", 3), ("Fri", 5)]:
+        parts.append(
+            f'<text x="{grid_x-16}" y="{oy + row * step + 10}" text-anchor="end" font-size="9" fill="{C["text_muted"]}">{label}</text>'
+        )
 
-    # Month labels
-    month_names = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"]
-    last_month = -1
-    for wi, w in enumerate(display_weeks):
-        d_list = w.get("contributionDays") or []
-        if d_list:
+    last_month = None
+    for week_index, week in enumerate(display_weeks):
+        days = week.get("contributionDays") or []
+        if days:
             try:
-                dt = datetime.fromisoformat(d_list[0]["date"])
+                dt = datetime.fromisoformat(days[0]["date"])
                 if dt.month != last_month:
                     last_month = dt.month
-                    mx = ox + wi * step
-                    parts.append(f'<text x="{mx}" y="{ly + 18}" font-size="7" fill="{C["text_dim"]}">{month_names[dt.month-1]}</text>')
+                    parts.append(
+                        f'<text x="{grid_x + week_index * step}" y="{oy-12}" font-size="9" fill="{C["text_muted"]}">{month_names[dt.month-1]}</text>'
+                    )
             except Exception:
                 pass
 
+        for day_index, day in enumerate(days):
+            count = day.get("contributionCount", 0)
+            level = 0 if count == 0 else (1 if count <= 2 else (2 if count <= 5 else (3 if count <= 9 else 4)))
+            cx = grid_x + week_index * step
+            cy = oy + day_index * step
+            parts.append(
+                f'<rect x="{cx}" y="{cy}" width="{cell}" height="{cell}" rx="4" fill="{levels[level]}"/>'
+            )
+            if level > 0:
+                parts.append(
+                    f'<rect x="{cx}" y="{cy}" width="{cell}" height="{cell}" rx="4" fill="none" stroke="{C["border_hi"]}" stroke-width="0.5" opacity="0.18"/>'
+                )
+
+    parts.append(
+        f'<text x="{legend_x-30}" y="{legend_y+9}" font-size="9" fill="{C["text_muted"]}">Low</text>'
+    )
+    for index, color in enumerate(levels):
+        lx = legend_x + index * 18
+        parts.append(
+            f'<rect x="{lx}" y="{legend_y}" width="14" height="14" rx="4" fill="{color}"/>'
+        )
+    parts.append(
+        f'<text x="{legend_x + 5 * 18 + 8}" y="{legend_y+9}" font-size="9" fill="{C["text_muted"]}">High</text>'
+    )
     return "\n".join(parts)
 
-def svg_items(langs):
-    """Item grid: 6 language slots, ALttP inventory style."""
-    px, py, pw, ph = 18, 416, 814, 130
-    parts = [svg_panel(px, py, pw, ph, "- I T E M S -")]
 
-    num_slots = 6
-    slot_w = 120
-    slot_h = 94
-    total_w = num_slots * slot_w + (num_slots - 1) * 12
-    sox = px + (pw - total_w) // 2
-    soy = py + 20
+def svg_stack(langs):
+    px, py, pw, ph = 18, 434, 814, 124
+    card_w = 118
+    card_h = 54
+    gap = 12
+    start_x = px + (pw - (6 * card_w + 5 * gap)) // 2
+    start_y = py + 60
 
-    for i in range(num_slots):
-        sx = sox + i * (slot_w + 12)
-        sy = soy
-
-        if i < len(langs):
-            name, pct = langs[i]
-            short = LANG_SHORT.get(name, name[:4].upper())
-            color = LANG_COLORS.get(name, "#7a9878")
-
-            # Slot bg
-            parts.append(f'<rect x="{sx}" y="{sy}" width="{slot_w}" height="{slot_h}" rx="3" fill="{C["panel_hi"]}"/>')
-            parts.append(f'<rect x="{sx}" y="{sy}" width="{slot_w}" height="{slot_h}" rx="3" fill="none" stroke="{C["border"]}" stroke-width="1.5"/>')
-
-            # Color swatch (big colored square as "item")
-            swatch_size = 32
-            swx = sx + (slot_w - swatch_size) // 2
-            swy = sy + 8
-            parts.append(f'<rect x="{swx}" y="{swy}" width="{swatch_size}" height="{swatch_size}" rx="4" fill="{color}" opacity="0.85"/>')
-            # Inner diamond highlight
-            cx_ = swx + swatch_size // 2
-            cy_ = swy + swatch_size // 2
-            parts.append(f'<rect x="{cx_-6}" y="{cy_-6}" width="12" height="12" rx="2" fill="white" opacity="0.15" transform="rotate(45 {cx_} {cy_})"/>')
-
-            # Language name
-            parts.append(f'<text x="{sx + slot_w//2}" y="{sy + 54}" text-anchor="middle" font-size="8" fill="{C["text"]}">{short}</text>')
-            # Percentage
-            parts.append(f'<text x="{sx + slot_w//2}" y="{sy + 70}" text-anchor="middle" font-size="8" fill="{color}">{pct:.1f}%</text>')
-
-            # Small bar
-            bar_w = slot_w - 20
-            bar_x = sx + 10
-            bar_y = sy + 78
-            parts.append(f'<rect x="{bar_x}" y="{bar_y}" width="{bar_w}" height="4" rx="2" fill="{C["bg"]}"/>')
-            fill_w = max(2, bar_w * pct / 100)
-            parts.append(f'<rect x="{bar_x}" y="{bar_y}" width="{fill_w:.0f}" height="4" rx="2" fill="{color}" opacity="0.7"/>')
+    parts = [svg_panel(px, py, pw, ph, "Stack", "Top languages")]
+    for index in range(6):
+        x = start_x + index * (card_w + gap)
+        y = start_y
+        if index < len(langs):
+            name, pct = langs[index]
+            color = LANG_COLORS.get(name, C["border_hi"])
+            short = LANG_SHORT.get(name, truncate(name.upper(), 4))
+            fill_width = max(8, int((card_w - 24) * pct / 100))
+            parts.extend(
+                [
+                    f'<rect x="{x}" y="{y}" width="{card_w}" height="{card_h}" rx="12" fill="{C["bg"]}" opacity="0.58"/>',
+                    f'<rect x="{x}" y="{y}" width="{card_w}" height="{card_h}" rx="12" fill="none" stroke="{C["panel_line"]}" stroke-width="1"/>',
+                    f'<circle cx="{x+20}" cy="{y+18}" r="6" fill="{color}"/>',
+                    f'<text x="{x+34}" y="{y+21}" font-size="10" fill="{C["text_muted"]}">{e(name)}</text>',
+                    f'<text x="{x+14}" y="{y+44}" font-size="16" font-weight="600" fill="{C["text"]}">{pct:.1f}%</text>',
+                    f'<text x="{x+card_w-14}" y="{y+44}" text-anchor="end" font-size="10" fill="{color}">{e(short)}</text>',
+                    f'<rect x="{x+14}" y="{y+52}" width="{card_w-28}" height="4" rx="2" fill="{C["panel_line"]}"/>',
+                    f'<rect x="{x+14}" y="{y+52}" width="{fill_width}" height="4" rx="2" fill="{color}"/>',
+                ]
+            )
         else:
-            # Empty slot
-            parts.append(f'<rect x="{sx}" y="{sy}" width="{slot_w}" height="{slot_h}" rx="3" fill="{C["bg"]}"/>')
-            parts.append(f'<rect x="{sx}" y="{sy}" width="{slot_w}" height="{slot_h}" rx="3" fill="none" stroke="{C["text_dark"]}" stroke-width="1" stroke-dasharray="4,4"/>')
-            parts.append(f'<text x="{sx + slot_w//2}" y="{sy + slot_h//2 + 4}" text-anchor="middle" font-size="10" fill="{C["text_dark"]}">- -</text>')
-
+            parts.extend(
+                [
+                    f'<rect x="{x}" y="{y}" width="{card_w}" height="{card_h}" rx="12" fill="{C["bg"]}" opacity="0.35"/>',
+                    f'<rect x="{x}" y="{y}" width="{card_w}" height="{card_h}" rx="12" fill="none" stroke="{C["panel_line"]}" stroke-width="1" stroke-dasharray="4 4"/>',
+                    f'<text x="{x+card_w/2}" y="{y+31}" text-anchor="middle" font-size="10" fill="{C["text_muted"]}">Open slot</text>',
+                ]
+            )
     return "\n".join(parts)
 
-def svg_quest_log(events):
-    """Dialog-box quest log."""
-    px, py, pw, ph = 18, 558, 814, 200
-    parts = [svg_panel(px, py, pw, ph, "QUEST LOG")]
+
+def svg_recent_work(events):
+    px, py, pw, ph = 18, 574, 814, 172
+    parts = [svg_panel(px, py, pw, ph, "Recent Work", "Latest public push events")]
+    header_y = py + 76
+    parts.extend(
+        [
+            f'<text x="{px+26}" y="{header_y}" font-size="9" fill="{C["text_muted"]}">Repository</text>',
+            f'<text x="{px+176}" y="{header_y}" font-size="9" fill="{C["text_muted"]}">Commit message</text>',
+            f'<text x="{px+pw-126}" y="{header_y}" font-size="9" fill="{C["text_muted"]}">SHA</text>',
+            f'<text x="{px+pw-20}" y="{header_y}" text-anchor="end" font-size="9" fill="{C["text_muted"]}">When</text>',
+        ]
+    )
 
     if not events:
-        parts.append(f'<text x="{px + pw//2}" y="{py + ph//2}" text-anchor="middle" font-size="9" fill="{C["text_dim"]}">NO QUESTS RECORDED...</text>')
-        parts.append(f'<text x="{px + pw//2}" y="{py + ph - 16}" text-anchor="middle" font-size="10" fill="{C["cursor"]}" class="cursor">▼</text>')
+        parts.append(
+            f'<text x="{px+pw/2}" y="{py+120}" text-anchor="middle" font-size="11" fill="{C["text_dim"]}">No recent public push events.</text>'
+        )
         return "\n".join(parts)
 
-    ey = py + 28
-    row_h = 32
-
-    for i, ev in enumerate(events):
-        sha = ev["sha"]
-        repo = ev["repo"][:14]
-        msg = ev["msg"][:32]
-        time = reltime(ev["ts"])
-
-        row_y = ey + i * row_h
-
-        # Alternating row bg
-        if i % 2 == 0:
-            parts.append(f'<rect x="{px + 10}" y="{row_y - 10}" width="{pw - 20}" height="{row_h - 2}" rx="2" fill="{C["panel_hi"]}" opacity="0.35"/>')
-
-        # Arrow cursor
-        parts.append(f'<text x="{px + 18}" y="{row_y + 4}" font-size="9" fill="{C["green"]}">▶</text>')
-
-        # SHA
-        parts.append(f'<text x="{px + 38}" y="{row_y + 4}" font-size="8" fill="{C["gold"]}">{sha}</text>')
-
-        # Repo
-        parts.append(f'<text x="{px + 110}" y="{row_y + 4}" font-size="8" fill="{C["border_hi"]}">{repo}</text>')
-
-        # Message
-        parts.append(f'<text x="{px + 248}" y="{row_y + 4}" font-size="8" fill="{C["text"]}">{msg}</text>')
-
-        # Time
-        parts.append(f'<text x="{px + pw - 22}" y="{row_y + 4}" text-anchor="end" font-size="8" fill="{C["text_dim"]}">{time}</text>')
-
-    # Dialog indicator
-    parts.append(f'<text x="{px + pw//2}" y="{py + ph - 14}" text-anchor="middle" font-size="10" fill="{C["cursor"]}" class="cursor">▼</text>')
-
+    row_h = 22
+    start_y = py + 92
+    for index, event in enumerate(events[:5]):
+        row_y = start_y + index * row_h
+        if index % 2 == 0:
+            parts.append(
+                f'<rect x="{px+14}" y="{row_y-13}" width="{pw-28}" height="{row_h}" rx="10" fill="{C["bg"]}" opacity="0.42"/>'
+            )
+        parts.append(
+            f'<circle cx="{px+24}" cy="{row_y-2}" r="3" fill="{C["border_hi"]}"/>'
+        )
+        parts.append(
+            f'<text x="{px+36}" y="{row_y}" font-size="10" fill="{C["border_hi"]}">{e(truncate(event["repo"], 18))}</text>'
+        )
+        parts.append(
+            f'<text x="{px+176}" y="{row_y}" font-size="10" fill="{C["text"]}">{e(truncate(event["msg"], 56))}</text>'
+        )
+        parts.append(
+            f'<text x="{px+pw-126}" y="{row_y}" font-size="10" fill="{C["gold"]}">{e(event["sha"])}</text>'
+        )
+        parts.append(
+            f'<text x="{px+pw-20}" y="{row_y}" text-anchor="end" font-size="10" fill="{C["text_dim"]}">{e(reltime(event["ts"]))}</text>'
+        )
     return "\n".join(parts)
 
-def svg_party(total, ai_count, ai_breakdown):
-    """Party bar: AI collaboration ratio."""
-    px, py, pw, ph = 18, 770, 814, 80
-    parts = [svg_panel(px, py, pw, ph, "PARTY")]
 
+def svg_collaboration(total, ai_count, ai_breakdown):
+    px, py, pw, ph = 18, 762, 814, 86
     bar_x = px + 20
-    bar_y = py + 22
-    bar_w = pw - 120
-    bar_h = 16
+    bar_y = py + 58
+    bar_w = pw - 40
+    bar_h = 12
+    manual_count = max(0, total - ai_count)
+    hero_pct = (manual_count / total * 100) if total > 0 else 100
+    legend_y = py + 78
 
-    hero_pct = ((total - ai_count) / total * 100) if total > 0 else 100
+    parts = [svg_panel(px, py, pw, ph, "Collaboration", "AI-assisted commit ratio")]
+    parts.append(
+        f'<rect x="{bar_x}" y="{bar_y}" width="{bar_w}" height="{bar_h}" rx="6" fill="{C["bg"]}" opacity="0.6"/>'
+    )
+    parts.append(
+        f'<rect x="{bar_x}" y="{bar_y}" width="{bar_w}" height="{bar_h}" rx="6" fill="none" stroke="{C["panel_line"]}" stroke-width="1"/>'
+    )
 
-    # Bar bg
-    parts.append(f'<rect x="{bar_x}" y="{bar_y}" width="{bar_w}" height="{bar_h}" rx="3" fill="{C["bg"]}"/>')
-    parts.append(f'<rect x="{bar_x}" y="{bar_y}" width="{bar_w}" height="{bar_h}" rx="3" fill="none" stroke="{C["border_lo"]}" stroke-width="0.5"/>')
+    manual_w = bar_w * manual_count / total if total > 0 else bar_w
+    parts.append(
+        f'<rect x="{bar_x}" y="{bar_y}" width="{manual_w:.1f}" height="{bar_h}" rx="6" fill="{C["green"]}"/>'
+    )
 
-    # Hero portion
-    hero_w = bar_w * hero_pct / 100
-    if hero_w > 0:
-        parts.append(f'<rect x="{bar_x}" y="{bar_y}" width="{hero_w:.0f}" height="{bar_h}" rx="3" fill="{C["green"]}" opacity="0.8"/>')
+    cursor_x = bar_x + manual_w
+    for name, count in sorted(ai_breakdown.items(), key=lambda item: -item[1]):
+        color = AI_COLORS.get(name, C["blue"])
+        width = (bar_w * count / total) if total > 0 else 0
+        if width <= 0:
+            continue
+        parts.append(
+            f'<rect x="{cursor_x:.1f}" y="{bar_y}" width="{width:.1f}" height="{bar_h}" fill="{color}"/>'
+        )
+        cursor_x += width
 
-    # AI portions
-    ax = bar_x + hero_w
-    for name, count in sorted(ai_breakdown.items(), key=lambda x: -x[1]):
-        seg_pct = count / total * 100 if total > 0 else 0
-        seg_w = bar_w * seg_pct / 100
-        color = AI_COLORS.get(name, C["magic"])
-        if seg_w > 1:
-            parts.append(f'<rect x="{ax:.0f}" y="{bar_y}" width="{seg_w:.0f}" height="{bar_h}" fill="{color}" opacity="0.8"/>')
-            ax += seg_w
+    parts.append(
+        f'<text x="{bar_x}" y="{py+40}" font-size="10" fill="{C["text_dim"]}">Manual {manual_count}/{total or 1} commits · {hero_pct:.0f}%</text>'
+    )
 
-    # Percentage label
-    parts.append(f'<text x="{bar_x + bar_w + 14}" y="{bar_y + 12}" font-size="9" fill="{C["text"]}">{hero_pct:.0f}%</text>')
-
-    # Legend
-    ly = bar_y + bar_h + 18
-    parts.append(f'<text x="{bar_x}" y="{ly}" font-size="8" fill="{C["green"]}">● HERO {hero_pct:.0f}%</text>')
-    lx = bar_x + 130
-    for name, count in sorted(ai_breakdown.items(), key=lambda x: -x[1]):
-        pct = count / total * 100 if total > 0 else 0
-        color = AI_COLORS.get(name, C["magic"])
-        parts.append(f'<text x="{lx}" y="{ly}" font-size="8" fill="{color}">● {name} {pct:.0f}%</text>')
-        lx += 120
-
+    legend_parts = [f'<text x="{bar_x}" y="{legend_y}" font-size="9" fill="{C["green"]}">Manual</text>']
+    legend_x = bar_x + 76
+    for name, count in sorted(ai_breakdown.items(), key=lambda item: -item[1]):
+        pct = (count / total * 100) if total > 0 else 0
+        color = AI_COLORS.get(name, C["blue"])
+        legend_parts.append(
+            f'<text x="{legend_x}" y="{legend_y}" font-size="9" fill="{color}">{e(name)} {pct:.0f}%</text>'
+        )
+        legend_x += 94
+    parts.extend(legend_parts)
     return "\n".join(parts)
+
 
 def svg_footer():
-    """Game-save footer."""
-    fy = H - 44
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
-
+    fy = 876
     parts = [
-        f'<line x1="16" y1="{fy - 6}" x2="{W-16}" y2="{fy - 6}" stroke="{C["border"]}" stroke-width="0.5" opacity="0.3"/>',
-        # Triforce left
-        svg_pixel_grid(TRIFORCE, {1: C["gold"]}, 24, fy, ps=4),
-        # Game saved
-        f'<text x="52" y="{fy + 10}" font-size="9" fill="{C["gold"]}">▶ GAME SAVED</text>',
-        # Blinking cursor
-        f'<rect x="175" y="{fy}" width="9" height="12" fill="{C["cursor"]}" class="cursor"/>',
-        # Secret quote
-        f'<text x="{W//2 + 30}" y="{fy + 10}" text-anchor="middle" font-size="8" fill="{C["text_dim"]}">IT\'S A SECRET TO EVERYBODY</text>',
-        # Timestamp
-        f'<text x="{W - 24}" y="{fy + 10}" text-anchor="end" font-size="7" fill="{C["text_dark"]}">{now}</text>',
-        # Triforce right
-        svg_pixel_grid(TRIFORCE, {1: C["gold"]}, W - 46, fy, ps=4),
+        f'<line x1="18" y1="{fy-18}" x2="{W-18}" y2="{fy-18}" stroke="{C["panel_line"]}" stroke-width="1"/>',
+        svg_pixel_grid(TRIFORCE, {1: C["gold"]}, 22, fy - 10, ps=4),
+        f'<text x="52" y="{fy}" font-size="10" fill="{C["text_dim"]}">Generated from public GitHub activity.</text>',
+        f'<text x="{W-22}" y="{fy}" text-anchor="end" font-size="10" fill="{C["text_muted"]}">Updated {now}</text>',
     ]
     return "\n".join(parts)
 
-# ═══════════════════════════════════════════════════════════════
-# ASSEMBLY
-# ═══════════════════════════════════════════════════════════════
 
 def generate_svg(stats, events, total, ai_count, ai_breakdown):
     sections = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}">',
         svg_defs(),
-        svg_outer_border(),
-        svg_sparkles(),
-        svg_hud(stats),
-        svg_equipment(stats),
-        svg_dungeon_map(stats["weeks"]),
-        svg_items(stats["langs"]),
-        svg_quest_log(events),
-        svg_party(total, ai_count, ai_breakdown),
+        svg_background(),
+        svg_header(stats),
+        svg_profile(stats),
+        svg_activity(stats),
+        svg_stack(stats["langs"]),
+        svg_recent_work(events),
+        svg_collaboration(total, ai_count, ai_breakdown),
         svg_footer(),
-        svg_scanlines(),
         "</svg>",
     ]
     return "\n".join(sections)
+
 
 def main():
     print(f"Generating profile card for {USERNAME}...")
@@ -886,30 +874,74 @@ def main():
         events = fetch_events()
         total, ai_count, ai_breakdown = fetch_ai_ratio()
     else:
-        print("No GITHUB_TOKEN — using placeholder data")
+        print("No GITHUB_TOKEN - using placeholder data")
         stats = {
-            "repos": 42, "stars": 89, "followers": 15,
-            "commits": 1234, "streak": 28, "total": 1500,
-            "langs": [("Python", 45.2), ("TypeScript", 23.1), ("Rust", 12.4),
-                      ("Go", 8.7), ("Shell", 6.2), ("HTML", 4.4)],
-            "weeks": [{"contributionDays": [
-                {"contributionCount": random.randint(0, 12), "date": f"2025-01-{d+1:02d}"}
-                for d in range(7)
-            ]} for _ in range(26)],
+            "repos": 42,
+            "stars": 89,
+            "followers": 15,
+            "commits": 1234,
+            "streak": 28,
+            "total": 1500,
+            "langs": [
+                ("Python", 45.2),
+                ("TypeScript", 23.1),
+                ("Rust", 12.4),
+                ("Go", 8.7),
+                ("Shell", 6.2),
+                ("HTML", 4.4),
+            ],
+            "weeks": [
+                {
+                    "contributionDays": [
+                        {
+                            "contributionCount": random.randint(0, 12),
+                            "date": f"2025-01-{day+1:02d}",
+                        }
+                        for day in range(7)
+                    ]
+                }
+                for _ in range(26)
+            ],
         }
         events = [
-            {"sha": "a1b2c3f", "repo": "bigmacfive", "msg": "feat: add zelda dashboard theme", "ts": "2025-01-15T10:00:00Z"},
-            {"sha": "d4e5f6a", "repo": "dotfiles", "msg": "fix: update shell aliases", "ts": "2025-01-14T08:00:00Z"},
-            {"sha": "g7h8i9j", "repo": "api-server", "msg": "refactor: clean up middleware", "ts": "2025-01-13T06:00:00Z"},
-            {"sha": "k0l1m2n", "repo": "bigmacfive", "msg": "chore: update dependencies", "ts": "2025-01-12T12:00:00Z"},
-            {"sha": "o3p4q5r", "repo": "webapp", "msg": "feat: implement dark mode toggle", "ts": "2025-01-11T15:00:00Z"},
+            {
+                "sha": "a1b2c3f",
+                "repo": "bigmacfive",
+                "msg": "feat: redesign the profile dashboard layout",
+                "ts": "2025-01-15T10:00:00Z",
+            },
+            {
+                "sha": "d4e5f6a",
+                "repo": "dotfiles",
+                "msg": "fix: clean shell aliases and startup scripts",
+                "ts": "2025-01-14T08:00:00Z",
+            },
+            {
+                "sha": "g7h8i9j",
+                "repo": "api-server",
+                "msg": "refactor: simplify middleware composition",
+                "ts": "2025-01-13T06:00:00Z",
+            },
+            {
+                "sha": "k0l1m2n",
+                "repo": "bigmacfive",
+                "msg": "chore: update generated profile asset",
+                "ts": "2025-01-12T12:00:00Z",
+            },
+            {
+                "sha": "o3p4q5r",
+                "repo": "webapp",
+                "msg": "feat: refine dashboard states and loading flow",
+                "ts": "2025-01-11T15:00:00Z",
+            },
         ]
-        total, ai_count, ai_breakdown = 100, 35, {"NAVI": 30, "TATL": 5}
+        total, ai_count, ai_breakdown = 100, 35, {"Claude": 12, "Cursor": 11, "Copilot": 7, "GPT": 5}
 
     svg = generate_svg(stats, events, total, ai_count, ai_breakdown)
     with open("profile.svg", "w") as f:
         f.write(svg)
     print(f"Done! profile.svg ({len(svg):,} bytes)")
+
 
 if __name__ == "__main__":
     main()

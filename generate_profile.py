@@ -12,7 +12,7 @@ from html import escape
 
 USERNAME = "bigmacfive"
 TOKEN = os.getenv("GITHUB_TOKEN", "")
-W, H = 850, 860
+W, H = 850, 948
 FONT = "'Pretendard', 'Segoe UI', Arial, sans-serif"
 FONT_PATH = os.path.join(
     os.path.dirname(__file__),
@@ -25,53 +25,24 @@ random.seed(42)
 
 
 C = {
-    "bg": "#f3f4ee",
-    "bg_alt": "#edf0e7",
-    "card": "#fbfcf8",
-    "line": "#d6dcd0",
-    "line_strong": "#c5cdc1",
-    "text": "#101114",
-    "text_soft": "#5f665d",
-    "text_faint": "#8b9189",
-    "accent": "#0f8b6d",
-    "accent_soft": "#d9ece6",
-    "accent_mid": "#7ab8a4",
-    "accent_dark": "#075c48",
-    "heat0": "#e7ece5",
-    "heat1": "#d5e8e0",
-    "heat2": "#b7dacd",
-    "heat3": "#7fbba6",
-    "heat4": "#0f8b6d",
-    "shadow": "#dfe5db",
+    "bg": "#000000",
+    "bg_soft": "#070707",
+    "card": "#0d0d0d",
+    "card_alt": "#151515",
+    "line": "#232323",
+    "line_soft": "#303030",
+    "text": "#ffffff",
+    "text_soft": "#cfcfcf",
+    "text_faint": "#848484",
+    "heat0": "#111111",
+    "heat1": "#262626",
+    "heat2": "#4a4a4a",
+    "heat3": "#7a7a7a",
+    "heat4": "#ffffff",
+    "shadow": "#000000",
 }
 
-
-LANG_COLORS = {
-    "Python": "#3572A5",
-    "TypeScript": "#3178C6",
-    "JavaScript": "#D6B400",
-    "Rust": "#C77D4E",
-    "Go": "#0AA5D8",
-    "Shell": "#5FAF3A",
-    "HTML": "#E34C26",
-    "CSS": "#7A4AC7",
-    "Java": "#B07219",
-    "C++": "#F34B7D",
-    "C": "#6A6A6A",
-    "Ruby": "#A3142B",
-    "Swift": "#F05138",
-    "Kotlin": "#7E57FF",
-    "Dart": "#00A7A7",
-    "Lua": "#2756C5",
-    "PHP": "#4F5D95",
-    "Scala": "#C22D40",
-    "Haskell": "#5E5086",
-    "Elixir": "#6E4A7E",
-    "Zig": "#EC915C",
-    "Vue": "#41B883",
-    "Svelte": "#FF3E00",
-    "SCSS": "#C6538C",
-}
+LANG_SHADES = ["#ffffff", "#d7d7d7", "#b6b6b6", "#969696", "#767676"]
 
 
 AI_PATTERNS = [
@@ -316,16 +287,20 @@ def svg_defs():
       font-feature-settings: "tnum" 1;
     }}
   </style>
-  <radialGradient id="bgGlowA" cx="0.15" cy="0.1" r="0.8">
-    <stop offset="0%" stop-color="#ffffff" stop-opacity="0.95" />
-    <stop offset="100%" stop-color="#ffffff" stop-opacity="0" />
+  <linearGradient id="panelFill" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0%" stop-color="{C["card_alt"]}" />
+    <stop offset="100%" stop-color="{C["card"]}" />
+  </linearGradient>
+  <radialGradient id="bgHaloA" cx="0.16" cy="0.18" r="0.72">
+    <stop offset="0%" stop-color="#191919" stop-opacity="0.9" />
+    <stop offset="100%" stop-color="#191919" stop-opacity="0" />
   </radialGradient>
-  <radialGradient id="bgGlowB" cx="0.85" cy="0.2" r="0.7">
-    <stop offset="0%" stop-color="{C["accent_soft"]}" stop-opacity="0.9" />
-    <stop offset="100%" stop-color="{C["accent_soft"]}" stop-opacity="0" />
+  <radialGradient id="bgHaloB" cx="0.86" cy="0.84" r="0.68">
+    <stop offset="0%" stop-color="#101010" stop-opacity="0.85" />
+    <stop offset="100%" stop-color="#101010" stop-opacity="0" />
   </radialGradient>
   <filter id="cardShadow" x="-10%" y="-10%" width="120%" height="130%">
-    <feDropShadow dx="0" dy="14" stdDeviation="18" flood-color="{C["shadow"]}" flood-opacity="0.9" />
+    <feDropShadow dx="0" dy="20" stdDeviation="20" flood-color="{C["shadow"]}" flood-opacity="0.45" />
   </filter>
 </defs>"""
 
@@ -334,19 +309,18 @@ def svg_background():
     return "\n".join(
         [
             f'<rect x="0" y="0" width="{W}" height="{H}" fill="{C["bg"]}"/>',
-            f'<rect x="0" y="0" width="{W}" height="{H}" fill="url(#bgGlowA)"/>',
-            f'<rect x="0" y="0" width="{W}" height="{H}" fill="url(#bgGlowB)"/>',
-            f'<circle cx="720" cy="104" r="150" fill="{C["accent_soft"]}" opacity="0.45"/>',
-            f'<circle cx="118" cy="720" r="110" fill="#ffffff" opacity="0.8"/>',
+            f'<rect x="0" y="0" width="{W}" height="{H}" fill="url(#bgHaloA)"/>',
+            f'<rect x="0" y="0" width="{W}" height="{H}" fill="url(#bgHaloB)"/>',
+            f'<rect x="18" y="18" width="{W - 36}" height="{H - 36}" rx="28" fill="none" stroke="{C["line"]}" stroke-width="1"/>',
         ]
     )
 
 
-def svg_card(x, y, w, h, radius=24):
+def svg_card(x, y, w, h, radius=26):
     return "\n".join(
         [
             '<g filter="url(#cardShadow)">',
-            f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="{radius}" fill="{C["card"]}"/>',
+            f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="{radius}" fill="url(#panelFill)"/>',
             "</g>",
             f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="{radius}" fill="none" stroke="{C["line"]}" stroke-width="1"/>',
         ]
@@ -381,8 +355,8 @@ def svg_divider(x1, y, x2):
 
 def svg_metric_chip(x, y, w, h, label, value):
     parts = [
-        f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="18" fill="#ffffff" opacity="0.7"/>',
-        f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="18" fill="none" stroke="{C["line"]}" stroke-width="1"/>',
+        f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="18" fill="{C["card_alt"]}"/>',
+        f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="18" fill="none" stroke="{C["line_soft"]}" stroke-width="1"/>',
         svg_label(x + 18, y + 22, label, size=10),
         svg_value(x + 18, y + 52, value, size=28),
     ]
@@ -390,23 +364,26 @@ def svg_metric_chip(x, y, w, h, label, value):
 
 
 def svg_hero(stats):
-    x, y, w, h = 32, 32, 786, 184
-    chip_w = 122
-    chip_h = 72
-    chip_gap = 12
+    x, y, w, h = 32, 32, 786, 196
+    chip_w = 126
+    chip_h = 74
+    chip_gap = 14
     chips_x = x + w - (chip_w * 2 + chip_gap) - 28
-    chips_y = y + 24
+    chips_y = y + 28
     streak_label = "day" if stats["streak"] == 1 else "days"
 
     parts = [svg_card(x, y, w, h, radius=28)]
-    parts.append(svg_label(x + 28, y + 28, "GitHub profile"))
-    parts.append(svg_value(x + 28, y + 76, DISPLAY_NAME, size=46))
-    parts.append(svg_body(x + 28, y + 108, PROFILE_ROLE, size=16, color=C["accent_dark"]))
+    parts.append(svg_label(x + 28, y + 30, "GitHub profile"))
+    parts.append(svg_value(x + 28, y + 88, DISPLAY_NAME, size=52))
+    parts.append(svg_body(x + 28, y + 126, PROFILE_ROLE, size=18, color=C["text_soft"]))
     meta = (
         f"Public activity only. Updated daily. Current streak: "
         f"{stats['streak']} {streak_label}."
     )
-    parts.append(svg_body(x + 28, y + 146, meta, size=11, color=C["text_faint"]))
+    parts.append(svg_body(x + 28, y + 160, meta, size=11, color=C["text_faint"]))
+    parts.append(
+        f'<line x1="{chips_x - 28}" y1="{y + 28}" x2="{chips_x - 28}" y2="{y + h - 28}" stroke="{C["line"]}" stroke-width="1"/>'
+    )
 
     chips = [
         ("Contributions", fmt_number(stats["total"])),
@@ -424,31 +401,52 @@ def svg_hero(stats):
 
 
 def svg_activity(weeks, total):
-    x, y, w, h = 32, 236, 786, 280
+    x, y, w, h = 32, 252, 786, 320
     parts = [svg_card(x, y, w, h)]
-    parts.append(svg_label(x + 28, y + 28, "Contribution activity"))
-    parts.append(svg_title(x + 28, y + 56, "Last 24 weeks", size=20))
+    parts.append(svg_label(x + 28, y + 30, "Contribution activity"))
+    parts.append(svg_title(x + 28, y + 66, "Last 24 weeks", size=24))
     parts.append(
         svg_body(
             x + 28,
-            y + 80,
+            y + 94,
             f"{fmt_number(total)} contributions across public repositories.",
             size=12,
         )
     )
 
     display_weeks = weeks[-24:] if len(weeks) >= 24 else weeks
-    cell = 16
-    gap = 4
+    cell = 14
+    gap = 6
     step = cell + gap
     grid_w = len(display_weeks) * step
     grid_x = x + 110 + max(0, (w - 180 - grid_w) // 2)
-    grid_y = y + 112
+    grid_y = y + 138
     levels = [C["heat0"], C["heat1"], C["heat2"], C["heat3"], C["heat4"]]
-    month_names = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+    month_names = [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec",
+    ]
 
     for label, row in [("Mon", 1), ("Wed", 3), ("Fri", 5)]:
-        parts.append(svg_label(grid_x - 18, grid_y + row * step + 11, label, size=10, color=C["text_faint"]))
+        parts.append(
+            svg_label(
+                grid_x - 18,
+                grid_y + row * step + 10,
+                label,
+                size=10,
+                color=C["text_faint"],
+            )
+        )
 
     last_month = None
     for week_index, week in enumerate(display_weeks):
@@ -459,22 +457,31 @@ def svg_activity(weeks, total):
                 if dt.month != last_month:
                     last_month = dt.month
                     parts.append(
-                        svg_label(grid_x + week_index * step, grid_y - 14, month_names[dt.month - 1], size=10)
+                        svg_label(
+                            grid_x + week_index * step,
+                            grid_y - 18,
+                            month_names[dt.month - 1],
+                            size=10,
+                        )
                     )
             except Exception:
                 pass
         for day_index, day in enumerate(days):
             count = day.get("contributionCount", 0)
-            level = 0 if count == 0 else (1 if count <= 2 else (2 if count <= 5 else (3 if count <= 9 else 4)))
+            level = (
+                0
+                if count == 0
+                else (1 if count <= 2 else (2 if count <= 5 else (3 if count <= 9 else 4)))
+            )
             cx = grid_x + week_index * step
             cy = grid_y + day_index * step
             parts.append(
-                f'<rect x="{cx}" y="{cy}" width="{cell}" height="{cell}" rx="5" fill="{levels[level]}"/>'
+                f'<rect x="{cx}" y="{cy}" width="{cell}" height="{cell}" rx="4" fill="{levels[level]}"/>'
             )
 
-    legend_x = x + w - 150
-    legend_y = y + h - 34
-    parts.append(svg_label(legend_x - 28, legend_y + 11, "Low", size=10))
+    legend_x = x + w - 166
+    legend_y = y + h - 44
+    parts.append(svg_label(legend_x - 30, legend_y + 11, "Low", size=10))
     for index, color in enumerate(levels):
         lx = legend_x + index * 18
         parts.append(
@@ -485,27 +492,27 @@ def svg_activity(weeks, total):
 
 
 def svg_languages(langs):
-    x, y, w, h = 32, 536, 300, 206
+    x, y, w, h = 32, 596, 280, 226
     parts = [svg_card(x, y, w, h)]
-    parts.append(svg_label(x + 24, y + 28, "Top languages"))
-    parts.append(svg_title(x + 24, y + 56, "Stack", size=20))
+    parts.append(svg_label(x + 24, y + 30, "Language mix"))
+    parts.append(svg_title(x + 24, y + 64, "Languages", size=22))
 
-    start_y = y + 90
-    row_h = 20
-    bar_x = x + 120
-    bar_w = 156
+    start_y = y + 96
+    row_gap = 26
+    bar_x = x + 118
+    bar_w = 138
 
     if not langs:
-        parts.append(svg_body(x + 24, y + 118, "No language data available.", size=12))
+        parts.append(svg_body(x + 24, y + 126, "No language data available.", size=12))
         return "\n".join(parts)
 
-    for index, (name, pct) in enumerate(langs[:6]):
-        row_y = start_y + index * 18
-        color = LANG_COLORS.get(name, C["accent"])
+    for index, (name, pct) in enumerate(langs[:5]):
+        row_y = start_y + index * row_gap
+        color = LANG_SHADES[min(index, len(LANG_SHADES) - 1)]
         fill_w = max(6, int(bar_w * pct / 100))
         parts.append(svg_body(x + 24, row_y, name, size=12, color=C["text"]))
         parts.append(
-            f'<rect x="{bar_x}" y="{row_y - 10}" width="{bar_w}" height="8" rx="4" fill="{C["bg_alt"]}"/>'
+            f'<rect x="{bar_x}" y="{row_y - 9}" width="{bar_w}" height="8" rx="4" fill="{C["line"]}"/>'
         )
         parts.append(
             f'<rect x="{bar_x}" y="{row_y - 10}" width="{fill_w}" height="8" rx="4" fill="{color}"/>'
@@ -514,71 +521,108 @@ def svg_languages(langs):
 
 
 def svg_recent_work(events):
-    x, y, w, h = 352, 536, 466, 206
+    x, y, w, h = 330, 596, 488, 226
     parts = [svg_card(x, y, w, h)]
-    parts.append(svg_label(x + 24, y + 28, "Latest public push events"))
-    parts.append(svg_title(x + 24, y + 56, "Recent work", size=20))
-    parts.append(svg_label(x + 24, y + 86, "Repository", size=10))
-    parts.append(svg_label(x + 154, y + 86, "Update", size=10))
-    parts.append(svg_label(x + w - 24, y + 86, "When", size=10, color=C["text_faint"], anchor="end"))
+    parts.append(svg_label(x + 24, y + 30, "Latest public push events"))
+    parts.append(svg_title(x + 24, y + 64, "Recent work", size=22))
 
     if not events:
         parts.append(
-            svg_body(x + w / 2, y + 126, "No recent public push events.", size=13, color=C["text_faint"], anchor="middle")
+            svg_body(
+                x + 24,
+                y + 116,
+                "No recent public push events.",
+                size=13,
+                color=C["text_soft"],
+            )
+        )
+        parts.append(
+            svg_body(
+                x + 24,
+                y + 140,
+                "This section updates when public commits appear on GitHub.",
+                size=12,
+                color=C["text_faint"],
+            )
         )
         return "\n".join(parts)
 
-    row_h = 24
-    start_y = y + 110
+    parts.append(svg_label(x + 24, y + 96, "Repository", size=10))
+    parts.append(svg_label(x + 164, y + 96, "Update", size=10))
+    parts.append(
+        svg_label(x + w - 24, y + 96, "When", size=10, color=C["text_faint"], anchor="end")
+    )
+
+    row_h = 30
+    start_y = y + 126
     for index, event in enumerate(events[:4]):
         row_y = start_y + index * row_h
         if index > 0:
-            parts.append(svg_divider(x + 24, row_y - 12, x + w - 24))
+            parts.append(svg_divider(x + 24, row_y - 16, x + w - 24))
         repo = truncate(event["repo"], 18)
-        msg = truncate(event["msg"], 36)
+        msg = truncate(event["msg"], 34)
         when = reltime(event["ts"])
-        parts.append(svg_body(x + 24, row_y, repo, size=12, color=C["accent_dark"]))
+        parts.append(svg_body(x + 24, row_y, repo, size=12, color=C["text"]))
         parts.append(svg_body(x + 154, row_y, msg, size=12, color=C["text"]))
         parts.append(svg_body(x + w - 24, row_y, when, size=12, color=C["text_soft"], anchor="end"))
     return "\n".join(parts)
 
 
 def svg_footer(total, ai_count, ai_breakdown):
-    x, y, w, h = 32, 762, 786, 66
-    bar_x = x + 150
-    bar_y = y + 29
-    bar_w = 360
-    bar_h = 10
+    x, y, w, h = 32, 840, 786, 82
+    bar_x = x + 24
+    bar_y = y + 60
+    bar_w = w - 48
+    bar_h = 8
+    updated = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 
     parts = [svg_card(x, y, w, h, radius=22)]
-    parts.append(svg_label(x + 24, y + 27, "Working style"))
+    parts.append(svg_label(x + 24, y + 28, "Working style"))
+    parts.append(
+        svg_label(x + w - 24, y + 28, f"Updated {updated}", size=10, anchor="end")
+    )
 
     if total <= 0:
         parts.append(
-            f'<rect x="{bar_x}" y="{bar_y}" width="{bar_w}" height="{bar_h}" rx="5" fill="{C["bg_alt"]}"/>'
+            f'<rect x="{bar_x}" y="{bar_y}" width="{bar_w}" height="{bar_h}" rx="4" fill="{C["line"]}"/>'
         )
         parts.append(
-            f'<rect x="{bar_x}" y="{bar_y}" width="{bar_w * 0.84:.1f}" height="{bar_h}" rx="5" fill="{C["accent_soft"]}"/>'
+            f'<rect x="{bar_x}" y="{bar_y}" width="{bar_w * 0.92:.1f}" height="{bar_h}" rx="4" fill="{C["heat2"]}"/>'
         )
-        parts.append(svg_body(x + 24, y + 48, "No AI-assist footers detected in recent public commits.", size=12))
-        parts.append(svg_body(x + 540, y + 48, "No recent commit sample", size=11, color=C["text_soft"]))
+        parts.append(
+            svg_body(
+                x + 24,
+                y + 46,
+                "No AI-assist footers detected in recent public commits.",
+                size=12,
+                color=C["text_soft"],
+            )
+        )
         return "\n".join(parts)
 
     manual_count = max(0, total - ai_count)
     manual_pct = manual_count / total * 100
-    parts.append(svg_body(x + 24, y + 48, f"Manual share {manual_pct:.0f}%", size=16, color=C["text"]))
     parts.append(
-        f'<rect x="{bar_x}" y="{bar_y}" width="{bar_w}" height="{bar_h}" rx="5" fill="{C["bg_alt"]}"/>'
+        svg_body(
+            x + 24,
+            y + 46,
+            f"Manual share {manual_pct:.0f}%",
+            size=12,
+            color=C["text_soft"],
+        )
     )
     parts.append(
-        f'<rect x="{bar_x}" y="{bar_y}" width="{bar_w * manual_count / total:.1f}" height="{bar_h}" rx="5" fill="{C["accent"]}"/>'
+        f'<rect x="{bar_x}" y="{bar_y}" width="{bar_w}" height="{bar_h}" rx="4" fill="{C["line"]}"/>'
+    )
+    parts.append(
+        f'<rect x="{bar_x}" y="{bar_y}" width="{bar_w * manual_count / total:.1f}" height="{bar_h}" rx="4" fill="{C["heat4"]}"/>'
     )
 
     cursor_x = bar_x + bar_w * manual_count / total
     sorted_breakdown = sorted(ai_breakdown.items(), key=lambda item: -item[1])[:3]
     for index, (name, count) in enumerate(sorted_breakdown):
         width = bar_w * count / total
-        color = ["#94c8b8", "#b8d9cf", "#cbded7"][min(index, 2)]
+        color = [C["heat3"], C["heat2"], C["heat1"]][min(index, 2)]
         parts.append(
             f'<rect x="{cursor_x:.1f}" y="{bar_y}" width="{width:.1f}" height="{bar_h}" fill="{color}"/>'
         )
@@ -591,14 +635,17 @@ def svg_footer(total, ai_count, ai_breakdown):
         )
     else:
         summary = "No AI-assist footers detected."
-    parts.append(svg_body(x + 540, y + 48, summary, size=11, color=C["text_soft"]))
+    parts.append(
+        svg_body(
+            x + w - 24,
+            y + 44,
+            truncate(summary, 40),
+            size=11,
+            color=C["text_faint"],
+            anchor="end",
+        )
+    )
     return "\n".join(parts)
-
-
-def svg_timestamp():
-    now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
-    return svg_body(W - 32, H - 16, f"Updated {now}", size=10, color=C["text_faint"], anchor="end")
-
 
 def generate_svg(stats, events, total, ai_count, ai_breakdown):
     sections = [
@@ -610,7 +657,6 @@ def generate_svg(stats, events, total, ai_count, ai_breakdown):
         svg_languages(stats["langs"]),
         svg_recent_work(events),
         svg_footer(total, ai_count, ai_breakdown),
-        svg_timestamp(),
         "</svg>",
     ]
     return "\n".join(sections)

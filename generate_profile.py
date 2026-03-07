@@ -20,11 +20,7 @@ FONT_PATH = os.path.join(
     "Pretendard-Regular.subset.woff2",
 )
 DISPLAY_NAME = "Bigmacfive"
-PROFILE_TAGLINE = "Building maintainable software with clear product thinking."
-PROFILE_INTRO = [
-    "I focus on practical systems, clean interfaces, and durable execution.",
-    "This profile turns public GitHub activity into a quiet editorial snapshot.",
-]
+PROFILE_ROLE = "Founder of snapdeck.app and kuku.mom."
 random.seed(42)
 
 
@@ -75,7 +71,6 @@ LANG_COLORS = {
     "Vue": "#41B883",
     "Svelte": "#FF3E00",
     "SCSS": "#C6538C",
-    "Makefile": "#47B38C",
 }
 
 
@@ -194,6 +189,8 @@ def fetch_stats():
     for node in nodes:
         for edge in (node.get("languages") or {}).get("edges") or []:
             name = edge["node"]["name"]
+            if name == "Makefile":
+                continue
             lang_map[name] = lang_map.get(name, 0) + edge["size"]
     total_size = sum(lang_map.values()) or 1
     langs = sorted(lang_map.items(), key=lambda item: -item[1])[:6]
@@ -404,14 +401,12 @@ def svg_hero(stats):
     parts = [svg_card(x, y, w, h, radius=28)]
     parts.append(svg_label(x + 28, y + 28, "GitHub profile"))
     parts.append(svg_value(x + 28, y + 76, DISPLAY_NAME, size=46))
-    parts.append(svg_body(x + 28, y + 104, PROFILE_TAGLINE, size=16, color=C["accent_dark"]))
-    parts.append(svg_body(x + 28, y + 132, PROFILE_INTRO[0], size=13))
-    parts.append(svg_body(x + 28, y + 152, PROFILE_INTRO[1], size=13))
+    parts.append(svg_body(x + 28, y + 108, PROFILE_ROLE, size=16, color=C["accent_dark"]))
     meta = (
         f"Public activity only. Updated daily. Current streak: "
         f"{stats['streak']} {streak_label}."
     )
-    parts.append(svg_body(x + 28, y + 174, meta, size=11, color=C["text_faint"]))
+    parts.append(svg_body(x + 28, y + 146, meta, size=11, color=C["text_faint"]))
 
     chips = [
         ("Contributions", fmt_number(stats["total"])),
@@ -498,7 +493,7 @@ def svg_languages(langs):
     start_y = y + 90
     row_h = 20
     bar_x = x + 120
-    bar_w = 136
+    bar_w = 156
 
     if not langs:
         parts.append(svg_body(x + 24, y + 118, "No language data available.", size=12))
@@ -509,7 +504,6 @@ def svg_languages(langs):
         color = LANG_COLORS.get(name, C["accent"])
         fill_w = max(6, int(bar_w * pct / 100))
         parts.append(svg_body(x + 24, row_y, name, size=12, color=C["text"]))
-        parts.append(svg_body(x + 266, row_y, f"{pct:.1f}%", size=12, color=C["text_soft"], anchor="end"))
         parts.append(
             f'<rect x="{bar_x}" y="{row_y - 10}" width="{bar_w}" height="8" rx="4" fill="{C["bg_alt"]}"/>'
         )

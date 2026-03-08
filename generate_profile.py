@@ -377,26 +377,26 @@ def svg_hero(stats):
 
 
 def svg_activity(weeks, total):
-    x, y, w, h = 32, 252, 786, 320
+    x, y, w, h = 290, 32, 528, 256
     parts = [svg_card(x, y, w, h)]
-    parts.append(svg_label(x + 28, y + 30, "Contribution activity"))
-    parts.append(svg_title(x + 28, y + 66, "Last 24 weeks", size=24))
+    parts.append(svg_label(x + 24, y + 30, "Contribution activity"))
+    parts.append(svg_title(x + 24, y + 64, "Last 24 weeks", size=22))
     parts.append(
         svg_body(
-            x + 28,
-            y + 94,
-            f"{fmt_number(total)} contributions across public repositories.",
+            x + 24,
+            y + 92,
+            f"{fmt_number(total)} contributions.",
             size=12,
         )
     )
 
     display_weeks = weeks[-24:] if len(weeks) >= 24 else weeks
-    cell = 14
-    gap = 6
+    cell = 10
+    gap = 3
     step = cell + gap
     grid_w = len(display_weeks) * step
-    grid_x = x + 110 + max(0, (w - 180 - grid_w) // 2)
-    grid_y = y + 138
+    grid_x = x + 80 + max(0, (w - 120 - grid_w) // 2)
+    grid_y = y + 116
     levels = [C["heat0"], C["heat1"], C["heat2"], C["heat3"], C["heat4"]]
     month_names = [
         "Jan",
@@ -416,11 +416,12 @@ def svg_activity(weeks, total):
     for label, row in [("Mon", 1), ("Wed", 3), ("Fri", 5)]:
         parts.append(
             svg_label(
-                grid_x - 18,
-                grid_y + row * step + 10,
+                grid_x - 14,
+                grid_y + row * step + 8,
                 label,
-                size=10,
+                size=9,
                 color=C["text_faint"],
+                anchor="end",
             )
         )
 
@@ -468,7 +469,7 @@ def svg_activity(weeks, total):
 
 
 def svg_languages(langs):
-    x, y, w, h = 32, 32, 280, 256
+    x, y, w, h = 32, 32, 240, 256
     parts = [svg_card(x, y, w, h)]
     parts.append(svg_label(x + 24, y + 30, "Language mix"))
     parts.append(svg_title(x + 24, y + 64, "Languages", size=22))
@@ -629,7 +630,7 @@ def generate_svg(stats, events, total, ai_count, ai_breakdown):
         svg_defs(),
         svg_background(),
         svg_languages(stats["langs"]),
-        svg_recent_work(events),
+        svg_activity(stats["weeks"], stats["total"]),
         "</svg>",
     ]
     return "\n".join(sections)

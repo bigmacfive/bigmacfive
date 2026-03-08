@@ -477,7 +477,7 @@ def svg_languages(langs):
     start_y = y + 96
     row_gap = 26
     bar_x = x + 118
-    bar_w = 138
+    bar_w = w - 118 - 24
 
     if not langs:
         parts.append(svg_body(x + 24, y + 126, "No language data available.", size=12))

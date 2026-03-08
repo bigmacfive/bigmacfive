@@ -20,20 +20,20 @@
 <text x="56" y="62" font-size="10" fill="#848484">Language mix</text>
 <text x="56" y="96" font-size="22" font-weight="600" fill="#ffffff">Languages</text>
 <text x="56" y="128" font-size="12" fill="#ffffff">TypeScript</text>
-<rect x="150" y="119" width="138" height="8" rx="4" fill="#232323"/>
-<rect x="150" y="118" width="51" height="8" rx="4" fill="#ffffff"/>
+<rect x="150" y="119" width="98" height="8" rx="4" fill="#232323"/>
+<rect x="150" y="118" width="36" height="8" rx="4" fill="#ffffff"/>
 <text x="56" y="154" font-size="12" fill="#ffffff">Python</text>
-<rect x="150" y="145" width="138" height="8" rx="4" fill="#232323"/>
-<rect x="150" y="144" width="35" height="8" rx="4" fill="#d7d7d7"/>
+<rect x="150" y="145" width="98" height="8" rx="4" fill="#232323"/>
+<rect x="150" y="144" width="25" height="8" rx="4" fill="#d7d7d7"/>
 <text x="56" y="180" font-size="12" fill="#ffffff">Rust</text>
-<rect x="150" y="171" width="138" height="8" rx="4" fill="#232323"/>
-<rect x="150" y="170" width="24" height="8" rx="4" fill="#b6b6b6"/>
+<rect x="150" y="171" width="98" height="8" rx="4" fill="#232323"/>
+<rect x="150" y="170" width="17" height="8" rx="4" fill="#b6b6b6"/>
 <text x="56" y="206" font-size="12" fill="#ffffff">JavaScript</text>
-<rect x="150" y="197" width="138" height="8" rx="4" fill="#232323"/>
-<rect x="150" y="196" width="12" height="8" rx="4" fill="#969696"/>
+<rect x="150" y="197" width="98" height="8" rx="4" fill="#232323"/>
+<rect x="150" y="196" width="8" height="8" rx="4" fill="#969696"/>
 <text x="56" y="232" font-size="12" fill="#ffffff">CSS</text>
-<rect x="150" y="223" width="138" height="8" rx="4" fill="#232323"/>
-<rect x="150" y="222" width="7" height="8" rx="4" fill="#767676"/>
+<rect x="150" y="223" width="98" height="8" rx="4" fill="#232323"/>
+<rect x="150" y="222" width="6" height="8" rx="4" fill="#767676"/>
 <rect x="290" y="32" width="528" height="256" rx="26" fill="#0d0d0d"/>
 <rect x="290" y="32" width="528" height="256" rx="26" fill="none" stroke="#232323" stroke-width="1"/>
 <text x="314" y="62" font-size="10" fill="#848484">Contribution activity</text>

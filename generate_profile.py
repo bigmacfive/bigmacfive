@@ -12,7 +12,7 @@ from html import escape
 
 USERNAME = "bigmacfive"
 TOKEN = os.getenv("GITHUB_TOKEN", "")
-W, H = 850, 948
+W, H = 850, 320
 FONT = "'Pretendard', 'Segoe UI', Arial, sans-serif"
 FONT_PATH = os.path.join(
     os.path.dirname(__file__),
@@ -287,41 +287,17 @@ def svg_defs():
       font-feature-settings: "tnum" 1;
     }}
   </style>
-  <linearGradient id="panelFill" x1="0" y1="0" x2="1" y2="1">
-    <stop offset="0%" stop-color="{C["card_alt"]}" />
-    <stop offset="100%" stop-color="{C["card"]}" />
-  </linearGradient>
-  <radialGradient id="bgHaloA" cx="0.16" cy="0.18" r="0.72">
-    <stop offset="0%" stop-color="#191919" stop-opacity="0.9" />
-    <stop offset="100%" stop-color="#191919" stop-opacity="0" />
-  </radialGradient>
-  <radialGradient id="bgHaloB" cx="0.86" cy="0.84" r="0.68">
-    <stop offset="0%" stop-color="#101010" stop-opacity="0.85" />
-    <stop offset="100%" stop-color="#101010" stop-opacity="0" />
-  </radialGradient>
-  <filter id="cardShadow" x="-10%" y="-10%" width="120%" height="130%">
-    <feDropShadow dx="0" dy="20" stdDeviation="20" flood-color="{C["shadow"]}" flood-opacity="0.45" />
-  </filter>
 </defs>"""
 
 
 def svg_background():
-    return "\n".join(
-        [
-            f'<rect x="0" y="0" width="{W}" height="{H}" fill="{C["bg"]}"/>',
-            f'<rect x="0" y="0" width="{W}" height="{H}" fill="url(#bgHaloA)"/>',
-            f'<rect x="0" y="0" width="{W}" height="{H}" fill="url(#bgHaloB)"/>',
-            f'<rect x="18" y="18" width="{W - 36}" height="{H - 36}" rx="28" fill="none" stroke="{C["line"]}" stroke-width="1"/>',
-        ]
-    )
+    return f'<rect x="0" y="0" width="{W}" height="{H}" fill="{C["bg"]}"/>'
 
 
 def svg_card(x, y, w, h, radius=26):
     return "\n".join(
         [
-            '<g filter="url(#cardShadow)">',
-            f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="{radius}" fill="url(#panelFill)"/>',
-            "</g>",
+            f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="{radius}" fill="{C["card"]}"/>',
             f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="{radius}" fill="none" stroke="{C["line"]}" stroke-width="1"/>',
         ]
     )
@@ -492,7 +468,7 @@ def svg_activity(weeks, total):
 
 
 def svg_languages(langs):
-    x, y, w, h = 32, 596, 280, 226
+    x, y, w, h = 32, 32, 280, 256
     parts = [svg_card(x, y, w, h)]
     parts.append(svg_label(x + 24, y + 30, "Language mix"))
     parts.append(svg_title(x + 24, y + 64, "Languages", size=22))
@@ -521,7 +497,7 @@ def svg_languages(langs):
 
 
 def svg_recent_work(events):
-    x, y, w, h = 330, 596, 488, 226
+    x, y, w, h = 330, 32, 488, 256
     parts = [svg_card(x, y, w, h)]
     parts.append(svg_label(x + 24, y + 30, "Latest public push events"))
     parts.append(svg_title(x + 24, y + 64, "Recent work", size=22))
@@ -652,11 +628,8 @@ def generate_svg(stats, events, total, ai_count, ai_breakdown):
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}">',
         svg_defs(),
         svg_background(),
-        svg_hero(stats),
-        svg_activity(stats["weeks"], stats["total"]),
         svg_languages(stats["langs"]),
         svg_recent_work(events),
-        svg_footer(total, ai_count, ai_breakdown),
         "</svg>",
     ]
     return "\n".join(sections)

@@ -215,6 +215,7 @@
 <rect x="717" y="187" width="10" height="10" rx="4" fill="#111111"/>
 <rect x="717" y="200" width="10" height="10" rx="4" fill="#262626"/>
 <rect x="717" y="213" width="10" height="10" rx="4" fill="#111111"/>
+<rect x="717" y="226" width="10" height="10" rx="4" fill="#111111"/>
 <text x="622" y="255" font-size="10" fill="#848484">Low</text>
 <rect x="652" y="244" width="14" height="14" rx="4" fill="#111111"/>
 <rect x="670" y="244" width="14" height="14" rx="4" fill="#262626"/>
